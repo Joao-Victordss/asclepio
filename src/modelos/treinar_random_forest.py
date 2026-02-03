@@ -1,7 +1,7 @@
 from pathlib import Path
-import pickle
 
 import pandas as pd
+import joblib
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
     accuracy_score,
@@ -14,7 +14,7 @@ from sklearn.model_selection import train_test_split
 # Caminhos principais do projeto
 RAIZ_PROJETO = Path(__file__).resolve().parents[2]
 CAMINHO_BASE_BALANCEADA = RAIZ_PROJETO / "dados" / "processado" / "mastite_iot_balanceado.csv"
-CAMINHO_MODELO = RAIZ_PROJETO / "modelos" / "random_forest_mastite.pkl"
+CAMINHO_MODELO = RAIZ_PROJETO / "modelos" / "random_forest_mastite.pkl.gz"
 
 
 def carregar_dados(caminho: Path):
@@ -96,11 +96,12 @@ def treinar_e_avaliar(X, y):
 
 
 def salvar_modelo(modelo, caminho: Path):
-    """Salva o modelo treinado em disco (pickle)."""
+    """
+    Salva o modelo comprimido para reduzir tamanho do artefato de deploy.
+    """
     caminho.parent.mkdir(parents=True, exist_ok=True)
-    with open(caminho, "wb") as f:
-        pickle.dump(modelo, f)
-    print(f"\nModelo salvo em: {caminho}")
+    joblib.dump(modelo, caminho, compress=("gzip", 3))
+    print(f"\nModelo salvo (gzip) em: {caminho}")
 
 
 def main():
