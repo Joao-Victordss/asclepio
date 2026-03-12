@@ -5,17 +5,15 @@ Projeto em Python para classificar risco de mastite em vacas leiteiras usando da
 ## Estrutura do projeto
 ```
 classificador-mastite-iot/
-├─ dados/
-│  ├─ bruto/
-│  │  └─ mastite_iot_bruto.csv        # substituir pelo CSV bruto original
-│  └─ processado/                     # gerado pelos scripts
-├─ modelos/                           # modelos treinados (.pkl)
+├─ main.py                            # API FastAPI + servidor do frontend
+├─ static/                            # HTML, CSS e JavaScript da interface
+├─ images/                            # logos e ícones da interface
+├─ modelos/                           # modelo treinado (.pkl.gz ou .pkl)
 ├─ src/
-│  ├─ dados/preparar_base.py          # prepara e balanceia os dados
-│  └─ modelos/treinar_random_forest.py# treina e avalia o modelo
-├─ exemplo_entrada.csv                # exemplo de entrada para inferência
-├─ app_streamlit.py                   # app web para inferência
+│  ├─ dados/preparar_base.py          # preparação da base (apoio acadêmico)
+│  └─ modelos/treinar_random_forest.py# treino do Random Forest
 ├─ requirements.txt
+├─ exemplo_entrada.csv                # exemplo de entrada para inferência
 └─ README.md
 ```
 
@@ -30,32 +28,24 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-## Fluxo de dados e treino
-1) Coloque o CSV bruto em `dados/bruto/mastite_iot_bruto.csv` (mesmos nomes de features do artigo ou ajuste o mapa de renomeação em `src/dados/preparar_base.py`).
-   - Os dados brutos e processados **não são versionados**; mantenha-os fora do repositório remoto.
-2) Gerar bases tratada e balanceada:
+## Execução da aplicação
+1) Garanta que o modelo `modelos/random_forest_mastite.pkl.gz` exista no projeto.
+   - O arquivo `modelos/random_forest_mastite.pkl` continua aceito como fallback.
+2) Inicie a aplicação:
 ```bash
-python src/dados/preparar_base.py
+uvicorn main:app --reload
 ```
-Saídas: `dados/processado/mastite_iot_tratado.csv` e `dados/processado/mastite_iot_balanceado.csv`.
-3) Treinar o modelo Random Forest:
-```bash
-python src/modelos/treinar_random_forest.py
-```
-Saída: `modelos/random_forest_mastite.pkl.gz` (gzip, menor para deploy).
-
-## Uso da aplicação (inferência)
-1) Garantir que o modelo `modelos/random_forest_mastite.pkl.gz` está no repositório (ou `random_forest_mastite.pkl` como fallback).  
-2) Rodar o app:
-```bash
-streamlit run app_streamlit.py
-```
-3) Enviar um CSV no formato descrito abaixo e visualizar o resultado na tabela.
+3) Abra `http://127.0.0.1:8000`.
+4) Use a interface web para:
+   - enviar um CSV;
+   - preencher dados manualmente;
+   - baixar o CSV de exemplo;
+   - exportar o resultado da classificação.
 
 ### Modelo de arquivo para upload
 - Inclua uma coluna `ID` e as features numéricas: `Months_after_giving_birth, IUFL, EUFL, IUFR, EUFR, IURL, EURL, IURR, EURR, Temperature`.
 - Use ponto como separador decimal e vírgula como separador de coluna (CSV padrão).
-- Há um botão no app para baixar `exemplo_entrada.csv`, que já está no repositório.
+- Há um botão na interface para baixar `exemplo_entrada.csv`, que já está no repositório.
 
 ## Formato esperado dos dados
 - O CSV deve conter uma coluna `ID` (identificador do animal) e as features numéricas:
@@ -66,15 +56,25 @@ streamlit run app_streamlit.py
   - Probabilidades: `prob_mastite` (0 = mastite), `prob_saudavel` (1 = saudável)
 - O app valida tipos numéricos e recusa linhas com valores vazios/inválidos.
 
-## Deploy no Streamlit Community Cloud
-1) Suba o repositório no GitHub incluindo `modelos/random_forest_mastite.pkl.gz`.
-2) Em https://share.streamlit.io crie um novo app apontando para este repo e o arquivo `app_streamlit.py`.
-3) A configuração de tema e limites já está em `.streamlit/config.toml` (upload até 200 MB; app aplica limite lógico de 5 MB).
+## Endpoints principais
+- `GET /` serve a interface web.
+- `GET /exemplo` baixa o CSV de exemplo.
+- `POST /predict` recebe um CSV via `multipart/form-data`.
+- `POST /predict/manual` recebe dados manuais em JSON.
+
+## Treinamento do modelo
+Os scripts de preparação e treino continuam no repositório como apoio técnico do TCC, mas não fazem parte do fluxo principal da aplicação web.
+
+Para atualizar o modelo:
+```bash
+python src/dados/preparar_base.py
+python src/modelos/treinar_random_forest.py
+```
 
 ## Limitações conhecidas
 - O modelo foi treinado com Random Forest simples; não há comparação com modelos mais leves (ex.: LightGBM).  
 - Não há explicabilidade por instância (SHAP/LIME).  
-- Dados de treino não acompanham o repositório por privacidade; reproduza o treino localmente se precisar re-treinar.  
+- Dados de treino não acompanham o repositório por privacidade.  
 - O app não substitui diagnóstico veterinário.
 
 ## Referências

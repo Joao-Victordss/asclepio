@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Asclépio | Classificador de Mastite Bovina</title>
+  <link rel="icon" type="image/png" href="/images/flaticon.png" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════
+       NAV
+  ════════════════════════════════════════════════ -->
+  <header class="nav" id="nav">
+    <div class="nav-inner">
+      <a href="#inicio" class="nav-logo">
+        <img src="/images/asclepio-logo.png" alt="Asclépio" class="nav-logo-img" />
+      </a>
+      <nav class="nav-links">
+        <a href="#sobre">Sobre</a>
+        <a href="#como-funciona">Como funciona</a>
+        <a href="#classificar" class="nav-cta">Classificar agora</a>
+      </nav>
+      <button class="nav-burger" id="navBurger" aria-label="Menu" aria-expanded="false" aria-controls="navMobile">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <div class="nav-mobile" id="navMobile">
+      <a href="#sobre">Sobre</a>
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#classificar">Classificar agora</a>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ═══════════════════════════════════════════════
+         HERO
+    ════════════════════════════════════════════════ -->
+    <section class="hero" id="inicio">
+      <div class="hero-inner">
+        <div class="hero-eyebrow">
+          <span class="badge">Sensores IoT</span>
+          <span class="badge">Machine Learning (Aprendizado de Máquina)</span>
+        </div>
+        <h1 class="hero-title">
+          Classificador de<br>Mastite Bovina
+        </h1>
+        <p class="hero-sub">
+          Sistema em Python para classificar o risco de mastite em vacas leiteiras
+          usando dados numéricos de sensores do úbere e temperatura,
+          entregando uma resposta clara: <strong>"Mastite"</strong> ou <strong>"Saudável"</strong>,
+          com as probabilidades de cada classe. No conjunto de teste, o modelo atingiu
+          <strong>99,5% de acurácia</strong>.
+        </p>
+        <div class="hero-actions">
+          <a href="#classificar" class="btn btn-primary">Classificar agora</a>
+          <a href="/exemplo" class="btn btn-outline" download>Baixar CSV de exemplo</a>
+        </div>
+      </div>
+      <div class="hero-scroll-hint">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 5v14M5 12l7 7 7-7"/>
+        </svg>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════
+         SOBRE
+    ════════════════════════════════════════════════ -->
+    <section class="section" id="sobre">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-label">O projeto</span>
+          <h2 class="section-title">O que é este sistema?</h2>
+          <p class="section-sub">Tecnologia aplicada à bovinocultura leiteira</p>
+        </div>
+
+        <div class="about-grid">
+          <div class="about-text card">
+            <p>
+              A <strong>mastite</strong> é uma inflamação da glândula mamária e uma das doenças mais
+              frequentes e onerosas na bovinocultura leiteira. Ela causa redução na produção de leite,
+              descarte de leite contaminado, custos elevados com tratamento veterinário e, em casos
+              severos, pode levar ao descarte do animal.
+            </p>
+            <p>
+              Este sistema utiliza dados numéricos coletados por <strong>sensores IoT</strong>
+              posicionados no úbere, junto com a temperatura corporal, para, por meio de um modelo de
+              <strong>Machine Learning (Aprendizado de Máquina)</strong>, apoiar a identificação
+              precoce do risco de mastite.
+            </p>
+          </div>
+
+          <div class="about-stats">
+            <div class="stat-card">
+              <div class="stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
+                </svg>
+              </div>
+              <div class="stat-label">Sensores IoT</div>
+              <div class="stat-value">8</div>
+              <div class="stat-desc">canais de corrente no úbere</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+              </div>
+              <div class="stat-label">Algoritmo</div>
+              <div class="stat-value">RF</div>
+              <div class="stat-desc">Random Forest</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <div class="stat-label">Saída</div>
+              <div class="stat-value">2</div>
+              <div class="stat-desc">Mastite e Saudável</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h3l3 8 4-16 3 8h5"/>
+                </svg>
+              </div>
+              <div class="stat-label">Acurácia</div>
+              <div class="stat-value">99,5%</div>
+              <div class="stat-desc">no conjunto de teste</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════
+         COMO FUNCIONA
+    ════════════════════════════════════════════════ -->
+    <section class="section section-alt" id="como-funciona">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-label">Processo</span>
+          <h2 class="section-title">Como funciona (fluxo completo)</h2>
+          <p class="section-sub">Cada etapa do pipeline (fluxo de processamento de dados) explicada</p>
+        </div>
+
+        <div class="steps-grid">
+
+          <div class="step-card">
+            <div class="step-badge">1</div>
+            <h3>Entrada de dados via CSV</h3>
+            <p>
+              O sistema recebe um arquivo <strong>CSV (arquivo de dados em formato tabular)</strong>
+              com um identificador do animal (coluna <code>ID</code>) e as variáveis numéricas
+              coletadas pelos sensores:
+            </p>
+            <ul>
+              <li><code>Months_after_giving_birth</code>: meses pós-parto</li>
+              <li><code>IUFL, EUFL, IUFR, EUFR</code>: úbere frontal</li>
+              <li><code>IURL, EURL, IURR, EURR</code>: úbere traseiro</li>
+              <li><code>Temperature</code>: temperatura corporal</li>
+            </ul>
+          </div>
+
+          <div class="step-card">
+            <div class="step-badge">2</div>
+            <h3>Preparação da base</h3>
+            <p>Antes do treinamento, a base de dados passa por um tratamento para ficar consistente:</p>
+            <ul>
+              <li>Padronização dos nomes de colunas</li>
+              <li>Conversão das variáveis para formato numérico</li>
+              <li>Remoção de linhas incompletas ou inválidas</li>
+              <li>Padronização do rótulo (classe) para um formato único</li>
+            </ul>
+          </div>
+
+          <div class="step-card">
+            <div class="step-badge">3</div>
+            <h3>Balanceamento de classes</h3>
+            <p>
+              Em problemas de saúde animal, é comum ter desbalanceamento, com mais casos saudáveis do
+              que doentes, ou vice-versa. Para reduzir viés, o projeto aplica uma técnica de
+              <strong>oversampling (superamostragem)</strong> para equilibrar as classes e melhorar
+              a aprendizagem do modelo.
+            </p>
+          </div>
+
+          <div class="step-card">
+            <div class="step-badge">4</div>
+            <h3>Treinamento com Random Forest</h3>
+            <p>Com a base tratada e balanceada:</p>
+            <ul>
+              <li>Divisão em treino e teste, ou <em>split</em> (80% / 20%)</li>
+              <li>Treinamento do <strong>Random Forest (Floresta Aleatória)</strong></li>
+              <li>Cálculo de acurácia, matriz de confusão e relatório de classificação</li>
+              <li>Sensibilidade (detectar mastite) e especificidade (reconhecer saudáveis)</li>
+            </ul>
+          </div>
+
+          <div class="step-card">
+            <div class="step-badge">5</div>
+            <h3>Geração do artefato do modelo</h3>
+            <p>
+              Após o treinamento, o modelo é salvo em arquivo
+              <strong>.pkl.gz (arquivo compactado)</strong> para facilitar o carregamento na
+              <strong>API FastAPI</strong> e no uso da interface web.
+            </p>
+          </div>
+
+          <div class="step-card">
+            <div class="step-badge">6</div>
+            <h3>API FastAPI + interface web</h3>
+            <p>A aplicação web permite:</p>
+            <ul>
+              <li><strong>Upload (envio)</strong> de um CSV no formato esperado</li>
+              <li>Entrada manual dos dados diretamente pelo navegador</li>
+              <li>Validação dos dados (tipos numéricos e campos obrigatórios)</li>
+              <li>Resultado em tabela com classe prevista e probabilidades</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════
+         VARIAVEIS DE ENTRADA
+    ════════════════════════════════════════════════ -->
+    <section class="section" id="variaveis">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-label">Dados</span>
+          <h2 class="section-title">Variáveis de entrada</h2>
+          <p class="section-sub">Colunas obrigatórias no CSV (arquivo de dados em formato tabular)</p>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Coluna</th>
+                <th>Tipo</th>
+                <th>Descrição</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>ID</code></td><td>texto</td><td>Identificador único do animal</td></tr>
+              <tr><td><code>Months_after_giving_birth</code></td><td>decimal</td><td>Meses pós-parto</td></tr>
+              <tr><td><code>IUFL</code></td><td>decimal</td><td>Corrente interna, úbere frontal esquerdo</td></tr>
+              <tr><td><code>EUFL</code></td><td>decimal</td><td>Corrente externa, úbere frontal esquerdo</td></tr>
+              <tr><td><code>IUFR</code></td><td>decimal</td><td>Corrente interna, úbere frontal direito</td></tr>
+              <tr><td><code>EUFR</code></td><td>decimal</td><td>Corrente externa, úbere frontal direito</td></tr>
+              <tr><td><code>IURL</code></td><td>decimal</td><td>Corrente interna, úbere traseiro esquerdo</td></tr>
+              <tr><td><code>EURL</code></td><td>decimal</td><td>Corrente externa, úbere traseiro esquerdo</td></tr>
+              <tr><td><code>IURR</code></td><td>decimal</td><td>Corrente interna, úbere traseiro direito</td></tr>
+              <tr><td><code>EURR</code></td><td>decimal</td><td>Corrente externa, úbere traseiro direito</td></tr>
+              <tr><td><code>Temperature</code></td><td>decimal</td><td>Temperatura corporal do animal (°C)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════
+         AVISO
+    ════════════════════════════════════════════════ -->
+    <section class="section" id="aviso">
+      <div class="container">
+        <div class="warning-banner">
+          <div class="warning-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+          </div>
+          <div class="warning-text">
+            <strong>Limitações e aviso importante</strong>
+            <p>
+              Este sistema é um apoio computacional, <strong>não um diagnóstico definitivo</strong>.
+              Ele não substitui a avaliação clínica e a conduta de um médico veterinário.
+              O modelo atual é propositalmente objetivo e direto, usando Random Forest (Floresta Aleatória),
+              e pode ser evoluído futuramente com comparações com outros algoritmos e técnicas de
+              <em>explicabilidade</em> (formas de entender por que o modelo tomou determinada decisão).
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════
+         CLASSIFICAR
+    ════════════════════════════════════════════════ -->
+    <section class="section section-classify" id="classificar">
+      <div class="container container-narrow">
+        <div class="section-header">
+          <span class="section-label">Ferramenta</span>
+          <h2 class="section-title">Classificar animais</h2>
+          <p class="section-sub">
+            Envie um CSV ou preencha manualmente e receba o diagnóstico instantaneamente
+          </p>
+        </div>
+
+        <!-- Abas (Tabs) -->
+        <div class="tabs">
+          <button class="tab-btn tab-active" data-tab="csv">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+            </svg>
+            Via CSV (arquivo)
+          </button>
+          <button class="tab-btn" data-tab="manual">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/>
+            </svg>
+            Entrada manual
+          </button>
+        </div>
+
+        <!-- ── Tab CSV ── -->
+        <div id="tabCsv" class="tab-panel">
+
+          <!-- Input de arquivo (fora da dropzone para não conflitar com links) -->
+          <input type="file" id="fileInput" accept=".csv" hidden />
+
+          <!-- Upload Area -->
+          <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+              </svg>
+            </div>
+            <p class="upload-title">Arraste e solte seu CSV aqui</p>
+            <p class="upload-sub">ou</p>
+            <button class="btn btn-outline" id="uploadBtn" type="button">Selecionar arquivo</button>
+            <p class="upload-hint">Somente .csv, com tamanho máximo de 5 MB</p>
+            <a href="/exemplo" class="upload-example" id="downloadExemplo" download>Baixar arquivo de exemplo</a>
+          </div>
+
+          <!-- Arquivo selecionado -->
+          <div class="file-selected" id="fileSelected" hidden>
+            <div class="file-info">
+              <div class="file-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
+                </svg>
+              </div>
+              <div>
+                <p class="file-name" id="fileName">arquivo.csv</p>
+                <p class="file-size" id="fileSize">0 KB</p>
+              </div>
+              <button class="file-remove" id="fileRemove" title="Remover arquivo" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <button class="btn btn-primary btn-full" id="analyzeBtn" type="button">
+              <span id="analyzeBtnText">Analisar e classificar</span>
+              <span id="analyzeBtnSpinner" style="display:none; align-items:center; gap:.5rem;">
+                <svg class="spinner" viewBox="0 0 24 24" fill="none" width="18" height="18">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="60" stroke-dashoffset="20"/>
+                </svg>
+                Processando...
+              </span>
+            </button>
+          </div>
+
+          <!-- Erro CSV -->
+          <div class="result-error" id="resultError" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <p id="errorMsg"></p>
+          </div>
+
+        </div>
+
+        <!-- ── Tab Manual ── -->
+        <div id="tabManual" class="tab-panel" hidden>
+          <p class="manual-hint">
+            Preencha os dados de cada animal abaixo. Clique em <strong>+ Adicionar animal</strong>
+            para incluir mais linhas e em <strong>Analisar</strong> para obter o diagnóstico.
+          </p>
+          <div class="manual-table-wrap">
+            <table class="manual-table" id="manualTable">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Meses pós-parto</th>
+                  <th>IUFL</th>
+                  <th>EUFL</th>
+                  <th>IUFR</th>
+                  <th>EUFR</th>
+                  <th>IURL</th>
+                  <th>EURL</th>
+                  <th>IURR</th>
+                  <th>EURR</th>
+                  <th>Temperatura (°C)</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="manualBody">
+                <!-- Linha padrão gerada pelo JS -->
+              </tbody>
+            </table>
+          </div>
+          <div class="manual-actions">
+            <button class="btn btn-outline" id="addRowBtn" type="button">+ Adicionar animal</button>
+            <button class="btn btn-primary" id="analyzeManualBtn" type="button">
+              <span id="manualBtnText">Analisar</span>
+              <span id="manualBtnSpinner" style="display:none; align-items:center; gap:.5rem;">
+                <svg class="spinner" viewBox="0 0 24 24" fill="none" width="18" height="18">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="60" stroke-dashoffset="20"/>
+                </svg>
+                Processando...
+              </span>
+            </button>
+          </div>
+          <!-- Erro manual -->
+          <div class="result-error" id="resultErrorManual" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <p id="errorMsgManual"></p>
+          </div>
+        </div>
+
+        <!-- ═══ RESULTADOS (compartilhado pelas duas abas) ═══ -->
+        <div class="results" id="results" hidden>
+          <div class="results-summary">
+            <div class="summary-card summary-total">
+              <div class="summary-value" id="summaryTotal">0</div>
+              <div class="summary-label">Total de animais</div>
+            </div>
+            <div class="summary-card summary-mastite">
+              <div class="summary-value" id="summaryMastite">0</div>
+              <div class="summary-label">Com risco de mastite</div>
+            </div>
+            <div class="summary-card summary-saudavel">
+              <div class="summary-value" id="summarySaudavel">0</div>
+              <div class="summary-label">Saudáveis</div>
+            </div>
+          </div>
+
+          <div class="results-toolbar">
+            <p class="results-meta" id="resultsMeta">Mostrando 0 de 0 animais</p>
+            <div class="results-page-size" aria-label="Linhas por página">
+              <span class="results-page-label">Linhas por página</span>
+              <div class="results-page-options" id="pageSizeOptions" role="group" aria-label="Selecionar quantidade de linhas por página">
+                <button class="page-size-btn page-size-btn-active" type="button" data-page-size="10">10</button>
+                <button class="page-size-btn" type="button" data-page-size="25">25</button>
+                <button class="page-size-btn" type="button" data-page-size="50">50</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="data-table results-table">
+              <thead>
+                <tr>
+                  <th>ID do animal</th>
+                  <th>Classe prevista</th>
+                  <th>Prob. Mastite</th>
+                  <th>Prob. Saudável</th>
+                </tr>
+              </thead>
+              <tbody id="resultsBody"></tbody>
+            </table>
+          </div>
+
+          <div class="results-pagination" id="resultsPagination" hidden>
+            <button class="pagination-btn" id="prevPageBtn" type="button">Anterior</button>
+            <p class="pagination-info" id="paginationInfo">Página 1 de 1</p>
+            <button class="pagination-btn" id="nextPageBtn" type="button">Próxima</button>
+          </div>
+
+          <div class="results-actions">
+            <button class="btn btn-primary" id="downloadCsvBtn" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+              </svg>
+              Baixar resultado em CSV
+            </button>
+            <button class="btn btn-outline" id="newAnalysisBtn" type="button">
+              Nova análise
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════
+       FOOTER
+  ════════════════════════════════════════════════ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <h5>Sobre o Trabalho</h5>
+          <p>
+            Trabalho de Conclusão de Curso (TCC) que aplica técnicas de
+            Machine Learning (Aprendizado de Máquina) e IoT (Sensores)
+            na detecção precoce de mastite bovina.
+          </p>
+        </div>
+        <div class="footer-col">
+          <h5>Tecnologias</h5>
+          <ul>
+            <li>Python 3.12</li>
+            <li>FastAPI: framework web em Python</li>
+            <li>Scikit-learn: biblioteca de Machine Learning</li>
+            <li>Pandas: manipulação de dados tabulares</li>
+            <li>Imbalanced-learn: balanceamento de dataset</li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Referência</h5>
+          <ul>
+            <li>Artigo MasPA</li>
+            <li>AgriEngineering, 2021</li>
+            <li>DOI: 10.3390/agriengineering3030037</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <img src="/images/asclepio-logo.png" alt="Asclépio" class="footer-logo-img" />
+        <p>Classificador de Mastite Bovina | Trabalho de Conclusão de Curso | 2026/1</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
