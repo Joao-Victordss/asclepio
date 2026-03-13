@@ -22,6 +22,7 @@
       </a>
       <nav class="nav-links">
         <a href="#sobre">Sobre</a>
+        <a href="#sensores">Sensores IoT</a>
         <a href="#como-funciona">Como funciona</a>
         <a href="#classificar" class="nav-cta">Classificar agora</a>
       </nav>
@@ -31,6 +32,7 @@
     </div>
     <div class="nav-mobile" id="navMobile">
       <a href="#sobre">Sobre</a>
+      <a href="#sensores">Sensores IoT</a>
       <a href="#como-funciona">Como funciona</a>
       <a href="#classificar">Classificar agora</a>
     </div>
@@ -143,91 +145,192 @@
     </section>
 
     <!-- ═══════════════════════════════════════════════
+         SENSORES IoT
+    ════════════════════════════════════════════════ -->
+    <section class="section section-alt" id="sensores">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-label">Tecnologia</span>
+          <h2 class="section-title">O hardware IoT no campo</h2>
+          <p class="section-sub">Sensores posicionados na ordenha capturam dados elétricos do úbere e temperatura corporal em tempo real</p>
+        </div>
+
+        <div class="sensor-gallery">
+          <div class="sensor-gallery-main">
+            <figure class="sensor-figure">
+              <img src="/images/sensores/2.png" alt="Diagrama do corredor de sensores IoT com dois módulos laterais conectados a laptops" loading="lazy" />
+              <figcaption>
+                <span class="sensor-figure-label">Setup experimental</span>
+                Corredor de medição com sensores posicionados a 90 cm de altura nas laterais (espaçamento de 180 cm). Cada módulo transmite leituras de corrente do úbere (IUFL, EUFL, IUFR, EUFR, IURL, EURL, IURR, EURR) para o computador durante a passagem do animal.
+              </figcaption>
+            </figure>
+          </div>
+
+          <div class="sensor-gallery-side">
+            <figure class="sensor-figure">
+              <img src="/images/sensores/1.png" alt="Imagem termográfica FLIR do úbere bovino mostrando variações de temperatura" loading="lazy" />
+              <figcaption>
+                <span class="sensor-figure-label">Termografia do úbere</span>
+                Câmera FLIR registrando variações de temperatura na região mamária a variável <code>Temperature</code> usada no modelo.
+              </figcaption>
+            </figure>
+            <figure class="sensor-figure">
+              <img src="/images/sensores/3.webp" alt="Vaca em ordenhadeira automatizada com equipamentos de coleta acoplados" loading="lazy" />
+              <figcaption>
+                <span class="sensor-figure-label">Ordenha instrumentada</span>
+                Equipamentos de coleta acoplados à ordenhadeira para monitoramento contínuo durante a produção de leite.
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+
+        <figure class="sensor-figure sensor-figure-wide">
+          <img src="/images/sensores/4.jpg" alt="Carrossel de ordenha industrial DeLaval com múltiplas vacas em operação" loading="lazy" />
+          <figcaption>
+            <span class="sensor-figure-label">Escala industrial</span>
+            Carrossel de ordenha DeLaval em operação ambiente real onde sistemas IoT de monitoramento de saúde animal como este são integrados para detecção precoce de doenças como a mastite.
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════
          COMO FUNCIONA
     ════════════════════════════════════════════════ -->
-    <section class="section section-alt" id="como-funciona">
+    <section class="section" id="como-funciona">
       <div class="container">
         <div class="section-header">
           <span class="section-label">Processo</span>
-          <h2 class="section-title">Como funciona (fluxo completo)</h2>
-          <p class="section-sub">Cada etapa do pipeline (fluxo de processamento de dados) explicada</p>
+          <h2 class="section-title">Como a aplicação funciona</h2>
+          <p class="section-sub">Uso da interface e visão geral de como o modelo foi construído</p>
         </div>
 
-        <div class="steps-grid">
-
-          <div class="step-card">
-            <div class="step-badge">1</div>
-            <h3>Entrada de dados via CSV</h3>
-            <p>
-              O sistema recebe um arquivo <strong>CSV (arquivo de dados em formato tabular)</strong>
-              com um identificador do animal (coluna <code>ID</code>) e as variáveis numéricas
-              coletadas pelos sensores:
-            </p>
-            <ul>
-              <li><code>Months_after_giving_birth</code>: meses pós-parto</li>
-              <li><code>IUFL, EUFL, IUFR, EUFR</code>: úbere frontal</li>
-              <li><code>IURL, EURL, IURR, EURR</code>: úbere traseiro</li>
-              <li><code>Temperature</code>: temperatura corporal</li>
-            </ul>
+        <div class="process-block process-block-secondary">
+          <div class="process-head section-header">
+            <span class="section-label">Na prática</span>
+            <h3 class="process-title">Fluxo de uso da aplicação</h3>
+            <p class="process-sub">O que acontece quando o usuário utiliza o classificador</p>
           </div>
 
-          <div class="step-card">
-            <div class="step-badge">2</div>
-            <h3>Preparação da base</h3>
-            <p>Antes do treinamento, a base de dados passa por um tratamento para ficar consistente:</p>
-            <ul>
-              <li>Padronização dos nomes de colunas</li>
-              <li>Conversão das variáveis para formato numérico</li>
-              <li>Remoção de linhas incompletas ou inválidas</li>
-              <li>Padronização do rótulo (classe) para um formato único</li>
-            </ul>
+          <div class="steps-grid">
+            <div class="step-card">
+              <div class="step-badge">1</div>
+              <h3>Escolha do modo de uso</h3>
+              <p>
+                O usuário decide se quer usar um <strong>CSV</strong> com vários animais ou preencher
+                manualmente os dados de cada registro diretamente na interface.
+              </p>
+            </div>
+
+            <div class="step-card">
+              <div class="step-badge">2</div>
+              <h3>Envio das informações</h3>
+              <p>
+                Os dados dos sensores, do período pós-parto e da temperatura corporal são enviados
+                para a aplicação para iniciar a análise.
+              </p>
+            </div>
+
+            <div class="step-card">
+              <div class="step-badge">3</div>
+              <h3>Checagem do formato</h3>
+              <p>
+                A interface e a API verificam se o conteúdo está no formato esperado, com colunas
+                obrigatórias e valores válidos para processamento.
+              </p>
+            </div>
+
+            <div class="step-card">
+              <div class="step-badge">4</div>
+              <h3>Preparação para inferência</h3>
+              <p>
+                Depois da validação, os dados são organizados no padrão esperado pelo modelo para que
+                a classificação seja executada corretamente.
+              </p>
+            </div>
+
+            <div class="step-card">
+              <div class="step-badge">5</div>
+              <h3>Classificação pelo modelo</h3>
+              <p>
+                A API FastAPI utiliza o modelo Random Forest treinado para calcular a classe prevista
+                e as probabilidades de mastite e de animal saudável.
+              </p>
+            </div>
+
+            <div class="step-card">
+              <div class="step-badge">6</div>
+              <h3>Resultado e exportação</h3>
+              <p>
+                O sistema mostra o relatório paginado na tela, resume os totais encontrados e permite
+                exportar os resultados em CSV.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="process-block">
+          <div class="process-head process-head-spaced section-header">
+            <span class="section-label">Desenvolvimento</span>
+            <h3 class="process-title">Como o modelo foi construído</h3>
+            <p class="process-sub">Etapas usadas no desenvolvimento técnico do classificador</p>
           </div>
 
-          <div class="step-card">
-            <div class="step-badge">3</div>
-            <h3>Balanceamento de classes</h3>
-            <p>
-              Em problemas de saúde animal, é comum ter desbalanceamento, com mais casos saudáveis do
-              que doentes, ou vice-versa. Para reduzir viés, o projeto aplica uma técnica de
-              <strong>oversampling (superamostragem)</strong> para equilibrar as classes e melhorar
-              a aprendizagem do modelo.
-            </p>
-          </div>
+          <div class="steps-grid">
+            <div class="step-card">
+              <div class="step-badge">1</div>
+              <h3>Definição das variáveis</h3>
+              <p>
+                Foram selecionadas as variáveis ligadas aos sensores do úbere, ao tempo pós-parto e à
+                temperatura corporal para compor a entrada do modelo.
+              </p>
+            </div>
 
-          <div class="step-card">
-            <div class="step-badge">4</div>
-            <h3>Treinamento com Random Forest</h3>
-            <p>Com a base tratada e balanceada:</p>
-            <ul>
-              <li>Divisão em treino e teste, ou <em>split</em> (80% / 20%)</li>
-              <li>Treinamento do <strong>Random Forest (Floresta Aleatória)</strong></li>
-              <li>Cálculo de acurácia, matriz de confusão e relatório de classificação</li>
-              <li>Sensibilidade (detectar mastite) e especificidade (reconhecer saudáveis)</li>
-            </ul>
-          </div>
+            <div class="step-card">
+              <div class="step-badge">2</div>
+              <h3>Preparação da base</h3>
+              <p>
+                A base original foi tratada para padronizar nomes de colunas, converter valores para
+                formato numérico e remover registros incompletos ou inconsistentes.
+              </p>
+            </div>
 
-          <div class="step-card">
-            <div class="step-badge">5</div>
-            <h3>Geração do artefato do modelo</h3>
-            <p>
-              Após o treinamento, o modelo é salvo em arquivo
-              <strong>.pkl.gz (arquivo compactado)</strong> para facilitar o carregamento na
-              <strong>API FastAPI</strong> e no uso da interface web.
-            </p>
-          </div>
+            <div class="step-card">
+              <div class="step-badge">3</div>
+              <h3>Balanceamento das classes</h3>
+              <p>
+                Como problemas reais podem ter mais animais saudáveis do que com mastite, foi aplicado
+                <strong>oversampling</strong> para reduzir viés no treinamento.
+              </p>
+            </div>
 
-          <div class="step-card">
-            <div class="step-badge">6</div>
-            <h3>API FastAPI + interface web</h3>
-            <p>A aplicação web permite:</p>
-            <ul>
-              <li><strong>Upload (envio)</strong> de um CSV no formato esperado</li>
-              <li>Entrada manual dos dados diretamente pelo navegador</li>
-              <li>Validação dos dados (tipos numéricos e campos obrigatórios)</li>
-              <li>Resultado em tabela com classe prevista e probabilidades</li>
-            </ul>
-          </div>
+            <div class="step-card">
+              <div class="step-badge">4</div>
+              <h3>Separação entre treino e teste</h3>
+              <p>
+                A base foi dividida em subconjuntos para treinamento e teste, permitindo avaliar o
+                desempenho do modelo em dados que não foram usados no aprendizado.
+              </p>
+            </div>
 
+            <div class="step-card">
+              <div class="step-badge">5</div>
+              <h3>Treinamento e avaliação</h3>
+              <p>
+                O Random Forest foi treinado e depois avaliado com métricas como acurácia, matriz de
+                confusão e análise das classes previstas.
+              </p>
+            </div>
+
+            <div class="step-card">
+              <div class="step-badge">6</div>
+              <h3>Empacotamento para produção</h3>
+              <p>
+                O modelo final foi salvo em arquivo <strong>.pkl.gz</strong> para ser carregado pela API
+                FastAPI e utilizado diretamente na interface web.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
