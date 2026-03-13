@@ -1144,56 +1144,56 @@ input:focus-visible {
   gap: 1rem;
 }
 
-.sensor-figure {
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  background: var(--white);
-  border: 1px solid var(--gray-200);
-  box-shadow: var(--shadow-md);
-  transition: transform .24s var(--ease), box-shadow .24s var(--ease);
-  flex: 1;
-}
-
-.sensor-figure:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-lg);
-}
-
-.sensor-figure img {
-  width: 100%;
-  display: block;
-  object-fit: cover;
-}
-
-.sensor-gallery-main .sensor-figure img {
-  height: 380px;
-}
-
-.sensor-gallery-side .sensor-figure img {
-  height: 174px;
-}
-
+/* Card container — sem overflow:hidden aqui para não clipar o shadow */
+.sensor-figure,
 .sensor-figure-wide {
   border-radius: var(--radius-lg);
-  overflow: hidden;
   background: var(--white);
   border: 1px solid var(--gray-200);
   box-shadow: var(--shadow-md);
   transition: transform .24s var(--ease), box-shadow .24s var(--ease);
+  overflow: hidden; /* mantido para clipar o border-radius nas bordas do card */
 }
 
+.sensor-figure { flex: 1; }
+
+.sensor-figure:hover,
 .sensor-figure-wide:hover {
   transform: translateY(-5px);
   box-shadow: var(--shadow-lg);
 }
 
-.sensor-figure-wide img {
-  width: 100%;
-  height: 290px;
-  object-fit: cover;
-  display: block;
+/* Wrapper da imagem — aqui fica a altura explícita */
+.sensor-img {
+  overflow: hidden;
+  background: var(--gray-100);
 }
 
+.sensor-img-main { height: 340px; }
+.sensor-img-side  { height: 158px; }
+.sensor-img-wide  { height: 280px; }
+
+/* Imagem preenche 100% do wrapper */
+.sensor-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .4s var(--ease);
+}
+
+.sensor-figure:hover .sensor-img img,
+.sensor-figure-wide:hover .sensor-img img {
+  transform: scale(1.04);
+}
+
+/* Diagrama técnico: contain para não cortar o desenho */
+.sensor-img-main img {
+  object-fit: contain;
+  background: var(--white);
+}
+
+/* Captions */
 .sensor-figure figcaption,
 .sensor-figure-wide figcaption {
   padding: 1rem 1.35rem 1.15rem;
@@ -1213,7 +1213,8 @@ input:focus-visible {
   margin-bottom: .3rem;
 }
 
-.sensor-figure figcaption code {
+.sensor-figure figcaption code,
+.sensor-figure-wide figcaption code {
   background: var(--green-50);
   color: var(--green-900);
   border-radius: 4px;
@@ -1253,22 +1254,15 @@ input:focus-visible {
     grid-template-columns: 1fr;
   }
 
-  .sensor-gallery-main .sensor-figure img {
-    height: 260px;
-  }
+  .sensor-img-main { height: 260px; }
 
   .sensor-gallery-side {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .sensor-gallery-side .sensor-figure img {
-    height: 160px;
-  }
-
-  .sensor-figure-wide img {
-    height: 200px;
-  }
+  .sensor-img-side { height: 150px; }
+  .sensor-img-wide { height: 200px; }
 
   .results-summary {
     grid-template-columns: 1fr;
@@ -1300,9 +1294,7 @@ input:focus-visible {
     grid-template-columns: 1fr;
   }
 
-  .sensor-gallery-side .sensor-figure img {
-    height: 200px;
-  }
+  .sensor-img-side { height: 200px; }
 
   .about-stats {
     grid-template-columns: 1fr;
