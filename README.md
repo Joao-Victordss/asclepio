@@ -40,7 +40,8 @@ uvicorn main:app --reload
    - enviar um CSV;
    - preencher dados manualmente;
    - baixar o CSV de exemplo;
-   - exportar o resultado da classificação.
+   - exportar o resultado da classificação em CSV ou XLSX;
+   - escolher o delimitador do CSV na exportação.
 
 ### Modelo de arquivo para upload
 - Inclua uma coluna `ID` e as features numéricas: `Months_after_giving_birth, IUFL, EUFL, IUFR, EUFR, IURL, EURL, IURR, EURR, Temperature`.
@@ -61,6 +62,7 @@ uvicorn main:app --reload
 - `GET /exemplo` baixa o CSV de exemplo.
 - `POST /predict` recebe um CSV via `multipart/form-data`.
 - `POST /predict/manual` recebe dados manuais em JSON.
+- `POST /export/results` exporta os resultados em CSV ou XLSX.
 
 ## Treinamento do modelo
 Os scripts de preparação e treino continuam no repositório como apoio técnico do TCC, mas não fazem parte do fluxo principal da aplicação web.

@@ -1,14 +1,19 @@
+import csv
 import io
 import logging
+import math
+import zipfile
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Literal
+from xml.sax.saxutils import escape as xml_escape
 
 import joblib
 import pandas as pd
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 # ── Caminhos ──────────────────────────────────────────────────────────────────
 RAIZ = Path(__file__).resolve().parent
@@ -95,9 +100,61 @@ class RegistroManual(BaseModel):
     EURR: float
     Temperature: float
 
+    @field_validator("ID")
+    @classmethod
+    def validar_id(cls, value: str) -> str:
+        valor = value.strip()
+        if not valor:
+            raise ValueError("Informe um ID válido.")
+        return valor
+
+    @field_validator(
+        "Months_after_giving_birth",
+        "IUFL",
+        "EUFL",
+        "IUFR",
+        "EUFR",
+        "IURL",
+        "EURL",
+        "IURR",
+        "EURR",
+        "Temperature",
+    )
+    @classmethod
+    def validar_campos_numericos(cls, value: float) -> float:
+        if not math.isfinite(value):
+            raise ValueError("Informe um número válido.")
+        if value < 0:
+            raise ValueError("O valor deve ser maior ou igual a zero.")
+        return value
+
 
 class LoteManual(BaseModel):
     registros: list[RegistroManual]
+
+
+class ResultadoExportacao(BaseModel):
+    id: str
+    classe_prevista: str
+    prob_mastite: float
+    prob_saudavel: float | None = None
+
+
+class ExportacaoPayload(BaseModel):
+    formato: Literal["csv", "xlsx"]
+    delimitador: str | None = None
+    resultados: list[ResultadoExportacao]
+
+    @field_validator("delimitador")
+    @classmethod
+    def validar_delimitador(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+
+        delimitadores_validos = {",", ";", "\t", "|"}
+        if value not in delimitadores_validos:
+            raise ValueError("Escolha um delimitador CSV válido.")
+        return value
 
 
 @app.get("/", include_in_schema=False)
@@ -144,6 +201,29 @@ async def predict_manual(payload: LoteManual):
     return JSONResponse(_executar_predicao(modelo, df))
 
 
+@app.post("/export/results", summary="Exportar resultados da classificação")
+async def exportar_resultados(payload: ExportacaoPayload):
+    if not payload.resultados:
+        raise HTTPException(status_code=422, detail="Não há resultados para exportar.")
+
+    delimitador = payload.delimitador or ","
+    linhas = _montar_linhas_exportacao(payload.resultados)
+
+    if payload.formato == "csv":
+        conteudo = _gerar_csv_exportacao(linhas, delimitador)
+        extensao = "csv"
+        media_type = "text/csv; charset=utf-8"
+    else:
+        conteudo = _gerar_xlsx_exportacao(linhas)
+        extensao = "xlsx"
+        media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+    headers = {
+        "Content-Disposition": f'attachment; filename="resultado_classificacao.{extensao}"'
+    }
+    return Response(content=conteudo, media_type=media_type, headers=headers)
+
+
 # ── Funções auxiliares ────────────────────────────────────────────────────────
 
 def _preparar_dados(df: pd.DataFrame) -> pd.DataFrame:
@@ -160,6 +240,12 @@ def _preparar_dados(df: pd.DataFrame) -> pd.DataFrame:
     if cols_invalidas:
         raise ValueError(
             f"Valores inválidos ou vazios nas colunas: {', '.join(cols_invalidas)}. Revise o CSV."
+        )
+
+    cols_negativas = df_sel.columns[(df_sel < 0).any()].tolist()
+    if cols_negativas:
+        raise ValueError(
+            f"Valores negativos não são permitidos nas colunas: {', '.join(cols_negativas)}."
         )
 
     if df_sel.empty:
@@ -246,6 +332,120 @@ def _executar_predicao(modelo, df: pd.DataFrame) -> dict:
         "saudavel": total - n_mastite,
         "resultados": resultados,
     }
+
+
+def _montar_linhas_exportacao(resultados: list[ResultadoExportacao]) -> list[dict]:
+    linhas = []
+    for item in resultados:
+        linhas.append(
+            {
+                "ID do animal": item.id,
+                "Classe prevista": item.classe_prevista,
+                "Prob. Mastite": item.prob_mastite,
+                "Prob. Saudável": item.prob_saudavel,
+            }
+        )
+    return linhas
+
+
+def _gerar_csv_exportacao(linhas: list[dict], delimitador: str) -> bytes:
+    buffer = io.StringIO()
+    writer = csv.DictWriter(
+        buffer,
+        fieldnames=list(linhas[0].keys()),
+        delimiter=delimitador,
+        lineterminator="\n",
+    )
+    writer.writeheader()
+    writer.writerows(linhas)
+    return buffer.getvalue().encode("utf-8-sig")
+
+
+def _gerar_xlsx_exportacao(linhas: list[dict]) -> bytes:
+    workbook_buffer = io.BytesIO()
+
+    with zipfile.ZipFile(workbook_buffer, "w", compression=zipfile.ZIP_DEFLATED) as arquivo_zip:
+        arquivo_zip.writestr("[Content_Types].xml", _xlsx_content_types())
+        arquivo_zip.writestr("_rels/.rels", _xlsx_root_rels())
+        arquivo_zip.writestr("xl/workbook.xml", _xlsx_workbook())
+        arquivo_zip.writestr("xl/_rels/workbook.xml.rels", _xlsx_workbook_rels())
+        arquivo_zip.writestr("xl/worksheets/sheet1.xml", _xlsx_sheet(linhas))
+
+    return workbook_buffer.getvalue()
+
+
+def _xlsx_content_types() -> str:
+    return """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+</Types>"""
+
+
+def _xlsx_root_rels() -> str:
+    return """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>"""
+
+
+def _xlsx_workbook() -> str:
+    return """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+ xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets>
+    <sheet name="Resultados" sheetId="1" r:id="rId1"/>
+  </sheets>
+</workbook>"""
+
+
+def _xlsx_workbook_rels() -> str:
+    return """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+</Relationships>"""
+
+
+def _xlsx_sheet(linhas: list[dict]) -> str:
+    cabecalhos = list(linhas[0].keys())
+    todas_linhas = [cabecalhos] + [list(linha.values()) for linha in linhas]
+
+    xml_linhas = []
+    for indice_linha, valores in enumerate(todas_linhas, start=1):
+        celulas = []
+        for indice_coluna, valor in enumerate(valores, start=1):
+            referencia = f"{_numero_para_coluna_excel(indice_coluna)}{indice_linha}"
+            if isinstance(valor, (int, float)) and not isinstance(valor, bool) and value_is_finite(valor):
+                celulas.append(f'<c r="{referencia}"><v>{valor}</v></c>')
+                continue
+
+            texto = "" if valor is None else xml_escape(str(valor))
+            celulas.append(
+                f'<c r="{referencia}" t="inlineStr"><is><t>{texto}</t></is></c>'
+            )
+
+        xml_linhas.append(f'<row r="{indice_linha}">{"".join(celulas)}</row>')
+
+    return f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetData>
+    {''.join(xml_linhas)}
+  </sheetData>
+</worksheet>"""
+
+
+def _numero_para_coluna_excel(numero: int) -> str:
+    letras = []
+    while numero > 0:
+        numero, resto = divmod(numero - 1, 26)
+        letras.append(chr(65 + resto))
+    return "".join(reversed(letras))
+
+
+def value_is_finite(valor: float) -> bool:
+    return math.isfinite(float(valor))
 
 
 # ── Ponto de entrada (para rodar localmente) ─────────────────────────────────

@@ -365,15 +365,15 @@
             <tbody>
               <tr><td><code>ID</code></td><td>texto</td><td>Identificador único do animal</td></tr>
               <tr><td><code>Months_after_giving_birth</code></td><td>decimal</td><td>Meses pós-parto</td></tr>
-              <tr><td><code>IUFL</code></td><td>decimal</td><td>Corrente interna, úbere frontal esquerdo</td></tr>
-              <tr><td><code>EUFL</code></td><td>decimal</td><td>Corrente externa, úbere frontal esquerdo</td></tr>
-              <tr><td><code>IUFR</code></td><td>decimal</td><td>Corrente interna, úbere frontal direito</td></tr>
-              <tr><td><code>EUFR</code></td><td>decimal</td><td>Corrente externa, úbere frontal direito</td></tr>
-              <tr><td><code>IURL</code></td><td>decimal</td><td>Corrente interna, úbere traseiro esquerdo</td></tr>
-              <tr><td><code>EURL</code></td><td>decimal</td><td>Corrente externa, úbere traseiro esquerdo</td></tr>
-              <tr><td><code>IURR</code></td><td>decimal</td><td>Corrente interna, úbere traseiro direito</td></tr>
-              <tr><td><code>EURR</code></td><td>decimal</td><td>Corrente externa, úbere traseiro direito</td></tr>
-              <tr><td><code>Temperature</code></td><td>decimal</td><td>Temperatura corporal do animal (°C)</td></tr>
+              <tr><td><code>IUFL</code></td><td>decimal</td><td>Leitura interna do quarto mamário anterior esquerdo. Medição realizada na região interna do quarto mamário da parte da frente, lado esquerdo do úbere.</td></tr>
+              <tr><td><code>EUFL</code></td><td>decimal</td><td>Leitura externa do quarto mamário anterior esquerdo. Medição realizada na região externa do quarto mamário da parte da frente, lado esquerdo do úbere.</td></tr>
+              <tr><td><code>IUFR</code></td><td>decimal</td><td>Leitura interna do quarto mamário anterior direito. Medição realizada na região interna do quarto mamário da parte da frente, lado direito do úbere.</td></tr>
+              <tr><td><code>EUFR</code></td><td>decimal</td><td>Leitura externa do quarto mamário anterior direito. Medição realizada na região externa do quarto mamário da parte da frente, lado direito do úbere.</td></tr>
+              <tr><td><code>IURL</code></td><td>decimal</td><td>Leitura interna do quarto mamário posterior esquerdo. Medição realizada na região interna do quarto mamário da parte de trás, lado esquerdo do úbere.</td></tr>
+              <tr><td><code>EURL</code></td><td>decimal</td><td>Leitura externa do quarto mamário posterior esquerdo. Medição realizada na região externa do quarto mamário da parte de trás, lado esquerdo do úbere.</td></tr>
+              <tr><td><code>IURR</code></td><td>decimal</td><td>Leitura interna do quarto mamário posterior direito. Medição realizada na região interna do quarto mamário da parte de trás, lado direito do úbere.</td></tr>
+              <tr><td><code>EURR</code></td><td>decimal</td><td>Leitura externa do quarto mamário posterior direito. Medição realizada na região externa do quarto mamário da parte de trás, lado direito do úbere.</td></tr>
+              <tr><td><code>Temperature</code></td><td>decimal</td><td>Temperatura corporal do animal. Temperatura corporal do bovino, informada em graus Celsius (°C).</td></tr>
             </tbody>
           </table>
         </div>
@@ -495,32 +495,40 @@
 
         <!-- ── Tab Manual ── -->
         <div id="tabManual" class="tab-panel" hidden>
-          <p class="manual-hint">
-            Preencha os dados de cada animal abaixo. Clique em <strong>+ Adicionar animal</strong>
-            para incluir mais linhas e em <strong>Analisar</strong> para obter o diagnóstico.
-          </p>
-          <div class="manual-table-wrap">
-            <table class="manual-table" id="manualTable">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Meses pós-parto</th>
-                  <th>IUFL</th>
-                  <th>EUFL</th>
-                  <th>IUFR</th>
-                  <th>EUFR</th>
-                  <th>IURL</th>
-                  <th>EURL</th>
-                  <th>IURR</th>
-                  <th>EURR</th>
-                  <th>Temperatura (°C)</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="manualBody">
-                <!-- Linha padrão gerada pelo JS -->
-              </tbody>
-            </table>
+          <div class="manual-shell">
+            <div class="manual-shell-head">
+              <div>
+                <p class="manual-kicker">Entrada guiada</p>
+                <p class="manual-hint">
+                  Preencha os dados por animal com validação imediata. Valores numéricos devem ser
+                  <strong>zero ou positivos</strong> para que a classificação seja enviada.
+                </p>
+              </div>
+              <div class="manual-badges" aria-label="Regras da entrada manual">
+                <span class="manual-badge">Sem negativos</span>
+                <span class="manual-badge">Múltiplos animais</span>
+                <span class="manual-badge">Validação por campo</span>
+              </div>
+            </div>
+
+            <div class="manual-guide-grid" aria-hidden="true">
+              <div class="manual-guide-card">
+                <span class="manual-guide-title">Meses pós-parto</span>
+                <p>Informe o tempo decorrido desde o parto. Use apenas números.</p>
+              </div>
+              <div class="manual-guide-card">
+                <span class="manual-guide-title">Sensores do úbere</span>
+                <p>As siglas seguem o mesmo padrão do CSV para manter consistência com o modelo.</p>
+              </div>
+              <div class="manual-guide-card">
+                <span class="manual-guide-title">Temperatura</span>
+                <p>Registre a leitura corporal em graus Celsius para completar a análise.</p>
+              </div>
+            </div>
+
+            <div class="manual-list" id="manualBody">
+              <!-- Cards gerados pelo JS -->
+            </div>
           </div>
           <div class="manual-actions">
             <button class="btn btn-outline" id="addRowBtn" type="button">+ Adicionar animal</button>
@@ -560,6 +568,24 @@
             </div>
           </div>
 
+          <!-- Filtros da tabela de resultados -->
+          <div class="results-filters" id="resultsFilters">
+            <div class="filter-group">
+              <label for="filterIdInput" class="filter-label">Filtrar por ID</label>
+              <input type="text" id="filterIdInput" placeholder="Buscar ID do animal..." class="filter-input" autocomplete="off" />
+            </div>
+            <div class="filter-group">
+              <label for="filterClasseSelect" class="filter-label">Classe prevista</label>
+              <select id="filterClasseSelect" class="filter-select">
+                <option value="todos">Todas as classes</option>
+                <option value="Mastite">Mastite</option>
+                <option value="Saudável">Saudável</option>
+              </select>
+            </div>
+            <div class="filter-summary" id="filterSummary">Sem filtros aplicados</div>
+            <button class="btn-clear-filters" id="clearFiltersBtn" type="button" hidden>Limpar filtros</button>
+          </div>
+
           <div class="results-toolbar">
             <p class="results-meta" id="resultsMeta">Mostrando 0 de 0 animais</p>
             <div class="results-page-size" aria-label="Linhas por página">
@@ -593,12 +619,39 @@
           </div>
 
           <div class="results-actions">
-            <button class="btn btn-primary" id="downloadCsvBtn" type="button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
-              </svg>
-              Baixar resultado em CSV
-            </button>
+            <div class="export-panel" aria-label="Configurações de exportação">
+              <div class="export-panel-copy">
+                <span class="export-panel-label">Exportação</span>
+                <p class="export-panel-text">Escolha o formato do arquivo e, no CSV, defina o delimitador.</p>
+              </div>
+
+              <div class="export-controls">
+                <div class="export-control-group">
+                  <span class="export-control-label">Formato</span>
+                  <div class="export-format-toggle" id="exportFormatToggle" role="group" aria-label="Selecionar formato do arquivo">
+                    <button class="export-format-btn export-format-btn-active" type="button" data-export-format="csv">CSV</button>
+                    <button class="export-format-btn" type="button" data-export-format="xlsx">XLSX</button>
+                  </div>
+                </div>
+
+                <div class="export-control-group" id="delimiterGroup">
+                  <label for="delimiterSelect" class="export-control-label">Delimitador CSV</label>
+                  <select id="delimiterSelect" class="filter-select export-select">
+                    <option value=",">Vírgula (,)</option>
+                    <option value=";">Ponto e vírgula (;)</option>
+                    <option value="|">Barra vertical (|)</option>
+                    <option value="tab">Tabulação</option>
+                  </select>
+                </div>
+              </div>
+
+              <button class="btn btn-primary export-download-btn" id="downloadResultsBtn" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+                </svg>
+                <span id="downloadResultsText">Baixar resultado em CSV</span>
+              </button>
+            </div>
             <button class="btn btn-outline" id="newAnalysisBtn" type="button">
               Nova análise
             </button>

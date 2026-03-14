@@ -1,12 +1,9 @@
-/* ═══════════════════════════════════════════════════════
-   NAV - scroll shadow + menu mobile
-════════════════════════════════════════════════════════ */
-const nav       = document.getElementById('nav');
+const nav = document.getElementById('nav');
 const navBurger = document.getElementById('navBurger');
 const navMobile = document.getElementById('navMobile');
-const tabCsv     = document.getElementById('tabCsv');
-const tabManual  = document.getElementById('tabManual');
-const resultsEl  = document.getElementById('results');
+const tabCsv = document.getElementById('tabCsv');
+const tabManual = document.getElementById('tabManual');
+const resultsEl = document.getElementById('results');
 const resultsBody = document.getElementById('resultsBody');
 const resultsMeta = document.getElementById('resultsMeta');
 const pageSizeOptions = document.getElementById('pageSizeOptions');
@@ -14,6 +11,109 @@ const resultsPagination = document.getElementById('resultsPagination');
 const paginationInfo = document.getElementById('paginationInfo');
 const prevPageBtn = document.getElementById('prevPageBtn');
 const nextPageBtn = document.getElementById('nextPageBtn');
+
+const FIELD_META = [
+  {
+    key: 'Months_after_giving_birth',
+    code: 'Months_after_giving_birth',
+    label: 'Meses pós-parto',
+    hint: 'Tempo desde o parto',
+    placeholder: '3.0',
+  },
+  {
+    key: 'IUFL',
+    code: 'IUFL',
+    label: 'Leitura interna do quarto mamário anterior esquerdo',
+    hint: 'Canal anterior esquerdo interno',
+    placeholder: '12.4',
+  },
+  {
+    key: 'EUFL',
+    code: 'EUFL',
+    label: 'Leitura externa do quarto mamário anterior esquerdo',
+    hint: 'Canal anterior esquerdo externo',
+    placeholder: '11.8',
+  },
+  {
+    key: 'IUFR',
+    code: 'IUFR',
+    label: 'Leitura interna do quarto mamário anterior direito',
+    hint: 'Canal anterior direito interno',
+    placeholder: '13.1',
+  },
+  {
+    key: 'EUFR',
+    code: 'EUFR',
+    label: 'Leitura externa do quarto mamário anterior direito',
+    hint: 'Canal anterior direito externo',
+    placeholder: '12.9',
+  },
+  {
+    key: 'IURL',
+    code: 'IURL',
+    label: 'Leitura interna do quarto mamário posterior esquerdo',
+    hint: 'Canal posterior esquerdo interno',
+    placeholder: '10.7',
+  },
+  {
+    key: 'EURL',
+    code: 'EURL',
+    label: 'Leitura externa do quarto mamário posterior esquerdo',
+    hint: 'Canal posterior esquerdo externo',
+    placeholder: '10.5',
+  },
+  {
+    key: 'IURR',
+    code: 'IURR',
+    label: 'Leitura interna do quarto mamário posterior direito',
+    hint: 'Canal posterior direito interno',
+    placeholder: '11.3',
+  },
+  {
+    key: 'EURR',
+    code: 'EURR',
+    label: 'Leitura externa do quarto mamário posterior direito',
+    hint: 'Canal posterior direito externo',
+    placeholder: '11.0',
+  },
+  {
+    key: 'Temperature',
+    code: 'Temperature',
+    label: 'Temperatura corporal',
+    hint: 'Leitura em graus Celsius',
+    placeholder: '38.6',
+  },
+];
+
+const FIELD_LABELS = FIELD_META.reduce((acc, field) => {
+  acc[field.key] = field.label;
+  return acc;
+}, { ID: 'ID' });
+
+const CAMPOS = FIELD_META.map((field) => field.key);
+const EXEMPLO = {
+  ID: 'Vaca-001',
+  Months_after_giving_birth: 3.0,
+  IUFL: 12.4,
+  EUFL: 11.8,
+  IUFR: 13.1,
+  EUFR: 12.9,
+  IURL: 10.7,
+  EURL: 10.5,
+  IURR: 11.3,
+  EURR: 11.0,
+  Temperature: 38.6,
+};
+
+let selectedFile = null;
+let currentPage = 1;
+let pageSize = 10;
+let filterText = '';
+let filterClasse = 'todos';
+let exportFormat = 'csv';
+let exportDelimiter = ',';
+let rowCounter = 0;
+let lastResultData = null;
 
 window.addEventListener('scroll', () => {
   nav.classList.toggle('scrolled', window.scrollY > 10);
@@ -23,20 +123,20 @@ navBurger.addEventListener('click', () => {
   const isOpen = navMobile.classList.toggle('open');
   navBurger.setAttribute('aria-expanded', String(isOpen));
 });
-navMobile.querySelectorAll('a').forEach(l => l.addEventListener('click', () => {
-  navMobile.classList.remove('open');
-  navBurger.setAttribute('aria-expanded', 'false');
-}));
 
-/* ═══════════════════════════════════════════════════════
-   TABS
-════════════════════════════════════════════════════════ */
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
-    btn.classList.add('tab-active');
+navMobile.querySelectorAll('a').forEach((link) => {
+  link.addEventListener('click', () => {
+    navMobile.classList.remove('open');
+    navBurger.setAttribute('aria-expanded', 'false');
+  });
+});
 
-    const tab = btn.dataset.tab;
+document.querySelectorAll('.tab-btn').forEach((button) => {
+  button.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach((item) => item.classList.remove('tab-active'));
+    button.classList.add('tab-active');
+
+    const tab = button.dataset.tab;
     setHidden(tabCsv, tab !== 'csv');
     setHidden(tabManual, tab !== 'manual');
     hideError();
@@ -45,22 +145,63 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
-/* ═══════════════════════════════════════════════════════
-   UTILIDADES
-════════════════════════════════════════════════════════ */
 function formatBytes(bytes) {
-  if (bytes < 1024)        return bytes + ' B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
 function setHidden(element, hidden) {
   element.hidden = hidden;
 }
 
+function getFieldLabel(fieldName) {
+  return FIELD_LABELS[fieldName] || fieldName;
+}
+
+function getValidationMessage(item) {
+  if (!item || typeof item !== 'object') {
+    return 'Erro de validação.';
+  }
+
+  if (item.type === 'missing') {
+    return 'Campo obrigatório.';
+  }
+
+  if (item.type === 'float_parsing' || item.type === 'int_parsing') {
+    return 'Informe um número válido.';
+  }
+
+  if (item.type === 'string_type') {
+    return 'Informe um texto válido.';
+  }
+
+  return item.msg || 'Erro de validação.';
+}
+
 function normalizeErrorMessage(detail) {
   if (Array.isArray(detail)) {
-    return detail.map(item => item.msg || 'Erro de validação.').join(' ');
+    return detail.map((item) => {
+      if (!item || typeof item !== 'object') {
+        return 'Erro de validação.';
+      }
+
+      const loc = Array.isArray(item.loc) ? item.loc : [];
+      const fieldName = loc[loc.length - 1];
+      const registrosIndex = loc.indexOf('registros');
+      const parts = [];
+
+      if (registrosIndex !== -1 && typeof loc[registrosIndex + 1] === 'number') {
+        parts.push(`Animal ${loc[registrosIndex + 1] + 1}`);
+      }
+
+      if (typeof fieldName === 'string') {
+        parts.push(getFieldLabel(fieldName));
+      }
+
+      const prefix = parts.length ? `${parts.join(' - ')}: ` : '';
+      return `${prefix}${getValidationMessage(item)}`;
+    }).join(' ');
   }
 
   if (detail && typeof detail === 'object') {
@@ -70,33 +211,25 @@ function normalizeErrorMessage(detail) {
   return detail || 'Erro inesperado ao processar a requisição.';
 }
 
-/** Escapa HTML para prevenir XSS */
-function esc(str) {
-  const d = document.createElement('div');
-  d.appendChild(document.createTextNode(String(str)));
-  return d.innerHTML;
+function esc(value) {
+  const div = document.createElement('div');
+  div.appendChild(document.createTextNode(String(value)));
+  return div.innerHTML;
 }
 
-/* ═══════════════════════════════════════════════════════
-   ABA CSV - upload, drag & drop
-════════════════════════════════════════════════════════ */
-const uploadArea        = document.getElementById('uploadArea');
-const fileInput         = document.getElementById('fileInput');
-const uploadBtn         = document.getElementById('uploadBtn');
-const fileSelected      = document.getElementById('fileSelected');
-const fileNameEl        = document.getElementById('fileName');
-const fileSizeEl        = document.getElementById('fileSize');
-const fileRemove        = document.getElementById('fileRemove');
-const analyzeBtn        = document.getElementById('analyzeBtn');
-const analyzeBtnText    = document.getElementById('analyzeBtnText');
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('fileInput');
+const uploadBtn = document.getElementById('uploadBtn');
+const fileSelected = document.getElementById('fileSelected');
+const fileNameEl = document.getElementById('fileName');
+const fileSizeEl = document.getElementById('fileSize');
+const fileRemove = document.getElementById('fileRemove');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const analyzeBtnText = document.getElementById('analyzeBtnText');
 const analyzeBtnSpinner = document.getElementById('analyzeBtnSpinner');
-const resultError       = document.getElementById('resultError');
-const errorMsg          = document.getElementById('errorMsg');
-const downloadExemplo   = document.getElementById('downloadExemplo');
-
-let selectedFile = null;
-let currentPage = 1;
-let pageSize = 10;
+const resultError = document.getElementById('resultError');
+const errorMsg = document.getElementById('errorMsg');
+const downloadExemplo = document.getElementById('downloadExemplo');
 
 function showFileSelected(file) {
   selectedFile = file;
@@ -117,8 +250,8 @@ function resetUpload() {
   hideResults();
 }
 
-function showError(msg) {
-  errorMsg.textContent        = msg;
+function showError(message) {
+  errorMsg.textContent = message;
   setHidden(resultError, false);
 }
 
@@ -132,137 +265,343 @@ function hideResults() {
   setHidden(resultsPagination, true);
 }
 
-function setCsvLoading(on) {
-  analyzeBtn.disabled             = on;
-  analyzeBtnText.style.display    = on ? 'none' : '';
-  analyzeBtnSpinner.style.display = on ? 'flex' : 'none';
+function setCsvLoading(loading) {
+  analyzeBtn.disabled = loading;
+  analyzeBtnText.style.display = loading ? 'none' : '';
+  analyzeBtnSpinner.style.display = loading ? 'flex' : 'none';
 }
 
-// Botão "Selecionar arquivo" abre o input
 uploadBtn.addEventListener('click', () => fileInput.click());
 
-// Clique na área de upload; ignora se for o link de exemplo ou o próprio botão
-uploadArea.addEventListener('click', (e) => {
-  if (e.target.closest('#downloadExemplo') || e.target.closest('#uploadBtn')) return;
+uploadArea.addEventListener('click', (event) => {
+  if (event.target.closest('#downloadExemplo') || event.target.closest('#uploadBtn')) {
+    return;
+  }
   fileInput.click();
 });
 
-// Impede que o link de download propague para o handler da área
-downloadExemplo.addEventListener('click', (e) => e.stopPropagation());
+downloadExemplo.addEventListener('click', (event) => event.stopPropagation());
 
 fileInput.addEventListener('change', () => {
-  if (fileInput.files.length > 0) showFileSelected(fileInput.files[0]);
+  if (fileInput.files.length > 0) {
+    showFileSelected(fileInput.files[0]);
+  }
 });
 
-// Drag & drop
-uploadArea.addEventListener('dragover',  (e) => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
-uploadArea.addEventListener('dragleave', ()  => uploadArea.classList.remove('drag-over'));
-uploadArea.addEventListener('drop', (e) => {
-  e.preventDefault();
+uploadArea.addEventListener('dragover', (event) => {
+  event.preventDefault();
+  uploadArea.classList.add('drag-over');
+});
+
+uploadArea.addEventListener('dragleave', () => {
   uploadArea.classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
+});
+
+uploadArea.addEventListener('drop', (event) => {
+  event.preventDefault();
+  uploadArea.classList.remove('drag-over');
+  const file = event.dataTransfer.files[0];
   if (!file) return;
-  if (!file.name.toLowerCase().endsWith('.csv')) { showError('Apenas arquivos .csv são aceitos.'); return; }
+  if (!file.name.toLowerCase().endsWith('.csv')) {
+    showError('Apenas arquivos .csv são aceitos.');
+    return;
+  }
   showFileSelected(file);
 });
 
 fileRemove.addEventListener('click', resetUpload);
 
-// Analisar CSV
 analyzeBtn.addEventListener('click', async () => {
   if (!selectedFile) return;
+
   if (selectedFile.size > 5 * 1024 * 1024) {
     showError(`Arquivo muito grande (${formatBytes(selectedFile.size)}). Limite: 5 MB.`);
     return;
   }
+
   hideError();
   setCsvLoading(true);
-  const form = new FormData();
-  form.append('arquivo', selectedFile);
-  await sendAndRender('/predict', { method: 'POST', body: form }, showError);
+
+  const formData = new FormData();
+  formData.append('arquivo', selectedFile);
+
+  await sendAndRender('/predict', { method: 'POST', body: formData }, showError);
+
   setCsvLoading(false);
 });
 
-/* ═══════════════════════════════════════════════════════
-   ABA MANUAL - tabela dinâmica
-════════════════════════════════════════════════════════ */
-const CAMPOS = ['Months_after_giving_birth','IUFL','EUFL','IUFR','EUFR','IURL','EURL','IURR','EURR','Temperature'];
-const EXEMPLO = { ID:'Vaca-001', Months_after_giving_birth:3.0, IUFL:12.4, EUFL:11.8, IUFR:13.1, EUFR:12.9, IURL:10.7, EURL:10.5, IURR:11.3, EURR:11.0, Temperature:38.6 };
-
-const manualBody        = document.getElementById('manualBody');
-const addRowBtn         = document.getElementById('addRowBtn');
-const analyzeManualBtn  = document.getElementById('analyzeManualBtn');
-const manualBtnText     = document.getElementById('manualBtnText');
-const manualBtnSpinner  = document.getElementById('manualBtnSpinner');
+const manualBody = document.getElementById('manualBody');
+const addRowBtn = document.getElementById('addRowBtn');
+const analyzeManualBtn = document.getElementById('analyzeManualBtn');
+const manualBtnText = document.getElementById('manualBtnText');
+const manualBtnSpinner = document.getElementById('manualBtnSpinner');
 const resultErrorManual = document.getElementById('resultErrorManual');
-const errorMsgManual    = document.getElementById('errorMsgManual');
+const errorMsgManual = document.getElementById('errorMsgManual');
 
-let rowCounter = 0;
+function bindNumericInputGuards(input) {
+  input.addEventListener('keydown', (event) => {
+    if (event.key === '-') {
+      event.preventDefault();
+    }
+  });
+
+  input.addEventListener('input', () => {
+    if (input.value.trim().startsWith('-')) {
+      input.value = input.value.replace('-', '');
+    }
+    clearFieldError(input);
+    hideErrorManual();
+  });
+}
+
+function createFieldShell({ field, code, label, hint, type = 'number', placeholder = '', value = '' }) {
+  const wrapper = document.createElement('div');
+  wrapper.className = `manual-field${field === 'ID' ? ' manual-field-id' : ''}`;
+
+  const fieldLabel = document.createElement('label');
+  fieldLabel.className = 'manual-field-label';
+  fieldLabel.setAttribute('for', `${field}-${rowCounter}`);
+  fieldLabel.innerHTML = code
+    ? `<span class="manual-field-code">${esc(code)}</span>${esc(label)}`
+    : esc(label);
+
+  const input = document.createElement('input');
+  input.id = `${field}-${rowCounter}`;
+  input.type = type;
+  input.dataset.field = field;
+  input.placeholder = placeholder;
+  input.value = value ?? '';
+  input.autocomplete = 'off';
+
+  if (type === 'number') {
+    input.step = 'any';
+    input.min = '0';
+    input.inputMode = 'decimal';
+    bindNumericInputGuards(input);
+  } else {
+    input.addEventListener('input', () => {
+      clearFieldError(input);
+      hideErrorManual();
+    });
+  }
+
+  const hintEl = document.createElement('span');
+  hintEl.className = 'manual-field-hint';
+  hintEl.textContent = hint;
+
+  const errorEl = document.createElement('span');
+  errorEl.className = 'manual-field-error';
+  errorEl.hidden = true;
+
+  wrapper.append(fieldLabel, input, hintEl, errorEl);
+  return wrapper;
+}
 
 function createRow(defaults = {}) {
-  rowCounter++;
-  const tr = document.createElement('tr');
-  tr.dataset.rowId = rowCounter;
+  rowCounter += 1;
 
-  // ID
-  const tdId = document.createElement('td');
-  const inId = document.createElement('input');
-  inId.type = 'text';
-  inId.value = defaults.ID || `Vaca-${String(rowCounter).padStart(3,'0')}`;
-  inId.dataset.field = 'ID';
-  tdId.appendChild(inId);
-  tr.appendChild(tdId);
+  const card = document.createElement('article');
+  card.className = 'manual-card';
+  card.dataset.rowId = String(rowCounter);
 
-  // Campos numéricos
-  CAMPOS.forEach(campo => {
-    const td = document.createElement('td');
-    const inp = document.createElement('input');
-    inp.type = 'number';
-    inp.step = 'any';
-    inp.value = defaults[campo] !== undefined ? defaults[campo] : '';
-    inp.dataset.field = campo;
-    td.appendChild(inp);
-    tr.appendChild(td);
+  const header = document.createElement('div');
+  header.className = 'manual-card-head';
+
+  const titleWrap = document.createElement('div');
+  titleWrap.className = 'manual-card-title-wrap';
+
+  const badge = document.createElement('span');
+  badge.className = 'manual-card-badge';
+
+  const title = document.createElement('h3');
+  title.className = 'manual-card-title';
+  title.textContent = 'Registro manual';
+
+  const subtitle = document.createElement('p');
+  subtitle.className = 'manual-card-subtitle';
+  subtitle.textContent = 'Campos obrigatórios para o modelo de classificação.';
+
+  titleWrap.append(badge, title, subtitle);
+
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.className = 'btn-remove-row';
+  removeBtn.title = 'Remover animal';
+  removeBtn.setAttribute('aria-label', 'Remover animal');
+  removeBtn.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+    </svg>
+  `;
+  removeBtn.addEventListener('click', () => {
+    card.remove();
+    if (manualBody.querySelectorAll('.manual-card').length === 0) {
+      addRow(EXEMPLO);
+    }
+    syncManualCards();
+    hideErrorManual();
   });
 
-  // Botão remover
-  const tdX = document.createElement('td');
-  const btnX = document.createElement('button');
-  btnX.type = 'button';
-  btnX.className = 'btn-remove-row';
-  btnX.title = 'Remover linha';
-  btnX.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>`;
-  btnX.addEventListener('click', () => {
-    tr.remove();
-    // Mantém pelo menos uma linha
-    if (manualBody.querySelectorAll('tr').length === 0) addRow(EXEMPLO);
-  });
-  tdX.appendChild(btnX);
-  tr.appendChild(tdX);
+  header.append(titleWrap, removeBtn);
 
-  return tr;
+  const grid = document.createElement('div');
+  grid.className = 'manual-card-grid';
+
+  grid.appendChild(createFieldShell({
+    field: 'ID',
+    label: 'Identificador do animal',
+    hint: 'Use um código único para identificar o animal.',
+    type: 'text',
+    placeholder: `Vaca-${String(rowCounter).padStart(3, '0')}`,
+    value: defaults.ID || `Vaca-${String(rowCounter).padStart(3, '0')}`,
+  }));
+
+  FIELD_META.forEach((meta) => {
+    grid.appendChild(createFieldShell({
+      field: meta.key,
+      code: meta.code,
+      label: meta.label,
+      hint: meta.hint,
+      placeholder: meta.placeholder,
+      value: defaults[meta.key] ?? '',
+    }));
+  });
+
+  card.append(header, grid);
+  return card;
+}
+
+function syncManualCards() {
+  manualBody.querySelectorAll('.manual-card').forEach((card, index) => {
+    const badge = card.querySelector('.manual-card-badge');
+    if (badge) {
+      badge.textContent = `Animal ${String(index + 1).padStart(2, '0')}`;
+    }
+  });
 }
 
 function addRow(defaults = {}) {
   manualBody.appendChild(createRow(defaults));
+  syncManualCards();
 }
 
-// Linha inicial com dados de exemplo
-addRow(EXEMPLO);
+function getFieldWrapper(input) {
+  return input.closest('.manual-field');
+}
 
-addRowBtn.addEventListener('click', () => addRow());
+function setFieldError(input, message) {
+  const wrapper = getFieldWrapper(input);
+  if (!wrapper) return;
+
+  wrapper.classList.add('manual-field-invalid');
+  input.setAttribute('aria-invalid', 'true');
+
+  const errorEl = wrapper.querySelector('.manual-field-error');
+  if (errorEl) {
+    errorEl.textContent = message;
+    errorEl.hidden = false;
+  }
+}
+
+function clearFieldError(input) {
+  const wrapper = getFieldWrapper(input);
+  if (!wrapper) return;
+
+  wrapper.classList.remove('manual-field-invalid');
+  input.removeAttribute('aria-invalid');
+
+  const errorEl = wrapper.querySelector('.manual-field-error');
+  if (errorEl) {
+    errorEl.textContent = '';
+    errorEl.hidden = true;
+  }
+}
+
+function clearAllManualFieldErrors() {
+  manualBody.querySelectorAll('.manual-field input').forEach((input) => clearFieldError(input));
+}
 
 function getManualRows() {
-  return Array.from(manualBody.querySelectorAll('tr')).map(tr => {
-    const obj = {};
-    tr.querySelectorAll('input').forEach(inp => { obj[inp.dataset.field] = inp.value; });
-    return obj;
+  return Array.from(manualBody.querySelectorAll('.manual-card')).map((card) => {
+    const row = {};
+    card.querySelectorAll('input').forEach((input) => {
+      row[input.dataset.field] = input.value.trim();
+    });
+    return row;
   });
 }
 
-function showErrorManual(msg) {
-  errorMsgManual.textContent          = msg;
+function validateManualRows() {
+  const rows = [];
+  let firstInvalidInput = null;
+
+  clearAllManualFieldErrors();
+
+  manualBody.querySelectorAll('.manual-card').forEach((card) => {
+    const row = {};
+
+    card.querySelectorAll('input').forEach((input) => {
+      row[input.dataset.field] = input.value.trim();
+    });
+
+    const idInput = card.querySelector('input[data-field="ID"]');
+    const cleanId = row.ID.trim();
+    if (!cleanId) {
+      setFieldError(idInput, 'Informe um ID para o animal.');
+      firstInvalidInput = firstInvalidInput || idInput;
+    }
+    row.ID = cleanId;
+
+    FIELD_META.forEach((meta) => {
+      const input = card.querySelector(`input[data-field="${meta.key}"]`);
+      const rawValue = row[meta.key];
+
+      if (rawValue === '') {
+        setFieldError(input, 'Campo obrigatório.');
+        firstInvalidInput = firstInvalidInput || input;
+        return;
+      }
+
+      const numericValue = Number(rawValue);
+      if (!Number.isFinite(numericValue)) {
+        setFieldError(input, 'Informe um número válido.');
+        firstInvalidInput = firstInvalidInput || input;
+        return;
+      }
+
+      if (numericValue < 0) {
+        setFieldError(input, 'Valores negativos não são aceitos.');
+        firstInvalidInput = firstInvalidInput || input;
+        return;
+      }
+
+      row[meta.key] = numericValue;
+    });
+
+    rows.push(row);
+  });
+
+  return {
+    hasErrors: Boolean(firstInvalidInput),
+    firstInvalidInput,
+    rows,
+  };
+}
+
+function showErrorManual(message) {
+  errorMsgManual.textContent = message;
   setHidden(resultErrorManual, false);
+}
+
+function showTabScopedError(message) {
+  if (!tabManual.hidden) {
+    hideError();
+    showErrorManual(message);
+    return;
+  }
+
+  hideErrorManual();
+  showError(message);
 }
 
 function hideErrorManual() {
@@ -270,45 +609,157 @@ function hideErrorManual() {
   errorMsgManual.textContent = '';
 }
 
-function setManualLoading(on) {
-  analyzeManualBtn.disabled           = on;
-  manualBtnText.style.display         = on ? 'none' : '';
-  manualBtnSpinner.style.display      = on ? 'flex' : 'none';
+function setManualLoading(loading) {
+  analyzeManualBtn.disabled = loading;
+  manualBtnText.style.display = loading ? 'none' : '';
+  manualBtnSpinner.style.display = loading ? 'flex' : 'none';
 }
 
+addRow(EXEMPLO);
+
+addRowBtn.addEventListener('click', () => addRow());
+
 analyzeManualBtn.addEventListener('click', async () => {
-  const rows = getManualRows();
-  if (rows.length === 0) { showErrorManual('Adicione pelo menos um animal.'); return; }
+  const currentRows = getManualRows();
+  if (currentRows.length === 0) {
+    showErrorManual('Adicione pelo menos um animal.');
+    return;
+  }
+
+  const validation = validateManualRows();
+  if (validation.hasErrors) {
+    showErrorManual('Revise os campos destacados antes de analisar.');
+    validation.firstInvalidInput?.focus();
+    validation.firstInvalidInput?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
 
   hideErrorManual();
   setManualLoading(true);
+
   await sendAndRender('/predict/manual', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ registros: rows }),
+    body: JSON.stringify({ registros: validation.rows }),
   }, showErrorManual);
+
   setManualLoading(false);
 });
 
-/* ═══════════════════════════════════════════════════════
-   ENVIAR E RENDERIZAR (compartilhado pelas duas abas)
-════════════════════════════════════════════════════════ */
-let lastResultData = null;   // armazena para download CSV
+const filterIdInput = document.getElementById('filterIdInput');
+const filterClasseSelect = document.getElementById('filterClasseSelect');
+const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+const filterSummary = document.getElementById('filterSummary');
+const exportFormatToggle = document.getElementById('exportFormatToggle');
+const delimiterGroup = document.getElementById('delimiterGroup');
+const delimiterSelect = document.getElementById('delimiterSelect');
+const downloadResultsBtn = document.getElementById('downloadResultsBtn');
+const downloadResultsText = document.getElementById('downloadResultsText');
+
+function getFilteredResults() {
+  const resultados = lastResultData?.resultados || [];
+  return resultados.filter((row) => {
+    const matchId = filterText === '' || row.id.toLowerCase().includes(filterText.toLowerCase());
+    const matchClasse = filterClasse === 'todos' || row.classe_prevista === filterClasse;
+    return matchId && matchClasse;
+  });
+}
+
+function syncFilterSummary() {
+  const activeFilters = [];
+
+  if (filterText !== '') {
+    activeFilters.push(`ID contém "${filterText}"`);
+  }
+
+  if (filterClasse !== 'todos') {
+    activeFilters.push(`Classe: ${filterClasse}`);
+  }
+
+  filterSummary.textContent = activeFilters.length
+    ? `Filtros ativos: ${activeFilters.join(' | ')}`
+    : 'Sem filtros aplicados';
+}
+
+function getNormalizedDelimiter() {
+  return exportDelimiter === 'tab' ? '\t' : exportDelimiter;
+}
+
+function getExportFileExtension() {
+  return exportFormat === 'xlsx' ? 'xlsx' : 'csv';
+}
+
+function getExportButtonLabel() {
+  return `Baixar resultado em ${exportFormat.toUpperCase()}`;
+}
+
+function syncExportControls() {
+  exportFormatToggle.querySelectorAll('.export-format-btn').forEach((button) => {
+    const isActive = button.dataset.exportFormat === exportFormat;
+    button.classList.toggle('export-format-btn-active', isActive);
+    button.setAttribute('aria-pressed', String(isActive));
+  });
+
+  delimiterGroup.hidden = exportFormat !== 'csv';
+  downloadResultsText.textContent = getExportButtonLabel();
+}
+
+function syncClearFiltersBtn() {
+  const hasFilter = filterText !== '' || filterClasse !== 'todos';
+  clearFiltersBtn.hidden = !hasFilter;
+  syncFilterSummary();
+}
+
+filterIdInput.addEventListener('input', () => {
+  filterText = filterIdInput.value.trim();
+  currentPage = 1;
+  syncClearFiltersBtn();
+  if (lastResultData) {
+    renderResultsRows();
+  }
+});
+
+filterClasseSelect.addEventListener('change', () => {
+  filterClasse = filterClasseSelect.value;
+  currentPage = 1;
+  syncClearFiltersBtn();
+  if (lastResultData) {
+    renderResultsRows();
+  }
+});
+
+clearFiltersBtn.addEventListener('click', () => {
+  filterText = '';
+  filterClasse = 'todos';
+  filterIdInput.value = '';
+  filterClasseSelect.value = 'todos';
+  currentPage = 1;
+  syncClearFiltersBtn();
+  if (lastResultData) {
+    renderResultsRows();
+  }
+});
 
 function getTotalPages(totalItems) {
   return Math.max(1, Math.ceil(totalItems / pageSize));
 }
 
-function renderPagination(totalItems) {
-  const totalPages = getTotalPages(totalItems);
-  const start = totalItems === 0 ? 0 : ((currentPage - 1) * pageSize) + 1;
-  const end = Math.min(currentPage * pageSize, totalItems);
+function renderPagination(filteredCount) {
+  const total = lastResultData?.resultados?.length || 0;
+  const totalPages = getTotalPages(filteredCount);
+  const start = filteredCount === 0 ? 0 : ((currentPage - 1) * pageSize) + 1;
+  const end = Math.min(currentPage * pageSize, filteredCount);
 
-  resultsMeta.textContent = `Mostrando ${start} a ${end} de ${totalItems} animais`;
+  if ((filterText !== '' || filterClasse !== 'todos') && filteredCount !== total) {
+    resultsMeta.textContent = `Mostrando ${start} a ${end} de ${filteredCount} animais filtrados (${total} no total)`;
+  } else {
+    resultsMeta.textContent = `Mostrando ${start} a ${end} de ${filteredCount} animais`;
+  }
+
   paginationInfo.textContent = `Página ${currentPage} de ${totalPages}`;
   prevPageBtn.disabled = currentPage === 1;
   nextPageBtn.disabled = currentPage === totalPages;
-  setHidden(resultsPagination, totalItems <= pageSize);
+  setHidden(resultsPagination, filteredCount <= pageSize);
 }
 
 function syncPageSizeButtons() {
@@ -320,39 +771,45 @@ function syncPageSizeButtons() {
 }
 
 function renderResultsRows() {
-  const resultados = lastResultData?.resultados || [];
-  const totalPages = getTotalPages(resultados.length);
+  const filtered = getFilteredResults();
+  const totalPages = getTotalPages(filtered.length);
   currentPage = Math.min(currentPage, totalPages);
 
   const startIndex = (currentPage - 1) * pageSize;
-  const pageRows = resultados.slice(startIndex, startIndex + pageSize);
+  const pageRows = filtered.slice(startIndex, startIndex + pageSize);
 
   resultsBody.innerHTML = '';
-  pageRows.forEach(row => {
+
+  pageRows.forEach((row) => {
     const isMastite = row.classe_prevista === 'Mastite';
-    const tr = document.createElement('tr');
-    tr.className = isMastite ? 'mastite' : 'saudavel';
-    const probM = (row.prob_mastite * 100).toFixed(1) + '%';
-    const probS = row.prob_saudavel !== undefined ? (row.prob_saudavel * 100).toFixed(1) + '%' : 'N/A';
-    tr.innerHTML = `
+    const tableRow = document.createElement('tr');
+    tableRow.className = isMastite ? 'mastite' : 'saudavel';
+
+    const probMastite = `${(row.prob_mastite * 100).toFixed(1)}%`;
+    const probSaudavel = row.prob_saudavel !== undefined
+      ? `${(row.prob_saudavel * 100).toFixed(1)}%`
+      : 'N/A';
+
+    tableRow.innerHTML = `
       <td>${esc(row.id)}</td>
       <td><span class="pill ${isMastite ? 'pill-mastite' : 'pill-saudavel'}">${esc(row.classe_prevista)}</span></td>
-      <td>${probM}</td>
-      <td>${probS}</td>
+      <td>${probMastite}</td>
+      <td>${probSaudavel}</td>
     `;
-    resultsBody.appendChild(tr);
+
+    resultsBody.appendChild(tableRow);
   });
 
-  renderPagination(resultados.length);
+  renderPagination(filtered.length);
 }
 
-async function parseResponse(res) {
-  const contentType = res.headers.get('content-type') || '';
+async function parseResponse(response) {
+  const contentType = response.headers.get('content-type') || '';
   if (contentType.includes('application/json')) {
-    return res.json();
+    return response.json();
   }
 
-  const text = await res.text();
+  const text = await response.text();
   try {
     return JSON.parse(text);
   } catch {
@@ -362,26 +819,36 @@ async function parseResponse(res) {
 
 async function sendAndRender(url, requestInit, errorFn) {
   try {
-    const res  = await fetch(url, requestInit);
-    const data = await parseResponse(res);
-    if (!res.ok) {
+    const response = await fetch(url, requestInit);
+    const data = await parseResponse(response);
+
+    if (!response.ok) {
       errorFn(normalizeErrorMessage(data.detail));
       return;
     }
+
     lastResultData = data;
     renderResults(data);
-  } catch (err) {
+  } catch (error) {
     errorFn('Não foi possível conectar ao servidor. Verifique se ele está rodando.');
-    console.error(err);
+    console.error(error);
   }
 }
 
 function renderResults(data) {
-  document.getElementById('summaryTotal').textContent    = data.total;
-  document.getElementById('summaryMastite').textContent  = data.mastite;
+  document.getElementById('summaryTotal').textContent = data.total;
+  document.getElementById('summaryMastite').textContent = data.mastite;
   document.getElementById('summarySaudavel').textContent = data.saudavel;
+
+  filterText = '';
+  filterClasse = 'todos';
+  filterIdInput.value = '';
+  filterClasseSelect.value = 'todos';
   currentPage = 1;
+  syncClearFiltersBtn();
+  syncExportControls();
   renderResultsRows();
+
   setHidden(resultsEl, false);
   resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -393,7 +860,9 @@ pageSizeOptions.querySelectorAll('.page-size-btn').forEach((button) => {
     pageSize = nextSize;
     currentPage = 1;
     syncPageSizeButtons();
-    if (lastResultData) renderResultsRows();
+    if (lastResultData) {
+      renderResultsRows();
+    }
   });
 });
 
@@ -404,45 +873,73 @@ prevPageBtn.addEventListener('click', () => {
 });
 
 nextPageBtn.addEventListener('click', () => {
-  const totalPages = getTotalPages(lastResultData?.resultados?.length || 0);
+  const totalPages = getTotalPages(getFilteredResults().length);
   if (currentPage >= totalPages) return;
   currentPage += 1;
   renderResultsRows();
 });
 
-/* ═══════════════════════════════════════════════════════
-   DOWNLOAD CSV DE RESULTADO
-════════════════════════════════════════════════════════ */
-document.getElementById('downloadCsvBtn').addEventListener('click', () => {
-  if (!lastResultData) return;
-  const headers = ['id', 'classe_prevista', 'prob_mastite', 'prob_saudavel'];
-  const lines   = [headers.join(',')];
-  lastResultData.resultados.forEach(r => {
-    lines.push([
-      `"${r.id}"`,
-      r.classe_prevista,
-      r.prob_mastite,
-      r.prob_saudavel !== undefined ? r.prob_saudavel : '',
-    ].join(','));
+exportFormatToggle.querySelectorAll('.export-format-btn').forEach((button) => {
+  button.addEventListener('click', () => {
+    const nextFormat = button.dataset.exportFormat;
+    if (!nextFormat || nextFormat === exportFormat) return;
+    exportFormat = nextFormat;
+    syncExportControls();
   });
-  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = 'resultado_classificacao.csv';
-  a.click();
-  URL.revokeObjectURL(url);
 });
 
-/* ═══════════════════════════════════════════════════════
-   NOVA ANÁLISE
-════════════════════════════════════════════════════════ */
+delimiterSelect.addEventListener('change', () => {
+  exportDelimiter = delimiterSelect.value;
+});
+
+downloadResultsBtn.addEventListener('click', async () => {
+  if (!lastResultData) return;
+
+  hideError();
+  hideErrorManual();
+  downloadResultsBtn.disabled = true;
+
+  try {
+    const response = await fetch('/export/results', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        formato: exportFormat,
+        delimitador: getNormalizedDelimiter(),
+        resultados: lastResultData.resultados,
+      }),
+    });
+
+    if (!response.ok) {
+      const data = await parseResponse(response);
+      showTabScopedError(normalizeErrorMessage(data.detail));
+      return;
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `resultado_classificacao.${getExportFileExtension()}`;
+    link.click();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    showTabScopedError('Não foi possível gerar o arquivo de exportação no momento.');
+    console.error(error);
+  } finally {
+    downloadResultsBtn.disabled = false;
+  }
+});
+
 document.getElementById('newAnalysisBtn').addEventListener('click', () => {
   resetUpload();
   hideErrorManual();
   hideResults();
+  clearAllManualFieldErrors();
   lastResultData = null;
   currentPage = 1;
 });
 
 syncPageSizeButtons();
+syncClearFiltersBtn();
+syncExportControls();
