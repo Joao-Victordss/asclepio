@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Asclépio | Classificador de Mastite Bovina</title>
+  <title>Asclépio | Triagem de Mastite Bovina</title>
   <link rel="icon" type="image/png" href="/images/flaticon.png" />
   <link rel="stylesheet" href="/static/style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -50,14 +51,13 @@
           <span class="badge">Machine Learning (Aprendizado de Máquina)</span>
         </div>
         <h1 class="hero-title">
-          Classificador de<br>Mastite Bovina
+          Triagem de<br>Mastite Bovina
         </h1>
         <p class="hero-sub">
-          Sistema em Python para classificar o risco de mastite em vacas leiteiras
-          usando dados numéricos de sensores do úbere e temperatura,
-          entregando uma resposta clara: <strong>"Mastite"</strong> ou <strong>"Saudável"</strong>,
-          com as probabilidades de cada classe. No conjunto de teste, o modelo atingiu
-          <strong>99,5% de acurácia</strong>.
+          Sistema em Python para apoiar a triagem de mastite em vacas leiteiras
+          usando dados numéricos de sensores do úbere e temperatura. A resposta principal
+          da ferramenta é o <strong>nível de risco</strong>, com probabilidade estimada e
+          orientação operacional para revisão do profissional antes da liberação do leite.
         </p>
         <div class="hero-actions">
           <a href="#classificar" class="btn btn-primary">Classificar agora</a>
@@ -126,8 +126,8 @@
                 </svg>
               </div>
               <div class="stat-label">Saída</div>
-              <div class="stat-value">2</div>
-              <div class="stat-desc">Mastite e Saudável</div>
+              <div class="stat-value">3</div>
+              <div class="stat-desc">Alta suspeita, monitorar e baixo risco</div>
             </div>
             <div class="stat-card">
               <div class="stat-icon">
@@ -135,9 +135,9 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h3l3 8 4-16 3 8h5"/>
                 </svg>
               </div>
-              <div class="stat-label">Acurácia</div>
-              <div class="stat-value">99,5%</div>
-              <div class="stat-desc">no conjunto de teste</div>
+              <div class="stat-label">Foco</div>
+              <div class="stat-value">Triagem</div>
+              <div class="stat-desc">apoio conservador para evitar leite contaminado</div>
             </div>
           </div>
         </div>
@@ -261,8 +261,8 @@
               <div class="step-badge">5</div>
               <h3>Classificação pelo modelo</h3>
               <p>
-                A API FastAPI utiliza o modelo Random Forest treinado para calcular a classe prevista
-                e as probabilidades de mastite e de animal saudável.
+                A API FastAPI utiliza o modelo Random Forest treinado para calcular a probabilidade
+                de mastite, classificar o nível de risco e sugerir a ação operacional mais segura.
               </p>
             </div>
 
@@ -270,8 +270,8 @@
               <div class="step-badge">6</div>
               <h3>Resultado e exportação</h3>
               <p>
-                O sistema mostra o relatório paginado na tela, resume os totais encontrados e permite
-                exportar os resultados em CSV.
+                O sistema mostra o relatório paginado na tela, resume quantos animais exigem revisão
+                e permite exportar os resultados em CSV ou XLSX.
               </p>
             </div>
           </div>
@@ -325,8 +325,8 @@
               <div class="step-badge">5</div>
               <h3>Treinamento e avaliação</h3>
               <p>
-                O Random Forest foi treinado e depois avaliado com métricas como acurácia, matriz de
-                confusão e análise das classes previstas.
+                O Random Forest foi treinado e depois avaliado com métricas orientadas à triagem,
+                com ênfase na detecção de mastite e na redução do risco operacional.
               </p>
             </div>
 
@@ -395,10 +395,9 @@
             <strong>Limitações e aviso importante</strong>
             <p>
               Este sistema é um apoio computacional, <strong>não um diagnóstico definitivo</strong>.
-              Ele não substitui a avaliação clínica e a conduta de um médico veterinário.
-              O modelo atual é propositalmente objetivo e direto, usando Random Forest (Floresta Aleatória),
-              e pode ser evoluído futuramente com comparações com outros algoritmos e técnicas de
-              <em>explicabilidade</em> (formas de entender por que o modelo tomou determinada decisão).
+              Ele foi organizado para funcionar como triagem conservadora: quando o risco calculado
+              é relevante, a recomendação é revisar o animal antes de liberar o leite. A avaliação
+              clínica e a conduta final continuam sendo responsabilidade do médico veterinário.
             </p>
           </div>
         </div>
@@ -414,7 +413,7 @@
           <span class="section-label">Ferramenta</span>
           <h2 class="section-title">Classificar animais</h2>
           <p class="section-sub">
-            Envie um CSV ou preencha manualmente e receba o diagnóstico instantaneamente
+            Envie um CSV ou preencha manualmente e receba uma triagem de risco com recomendação de revisão
           </p>
         </div>
 
@@ -553,19 +552,82 @@
 
         <!-- ═══ RESULTADOS (compartilhado pelas duas abas) ═══ -->
         <div class="results" id="results" hidden>
-          <div class="results-summary">
-            <div class="summary-card summary-total">
-              <div class="summary-value" id="summaryTotal">0</div>
-              <div class="summary-label">Total de animais</div>
+          <p class="results-policy" id="resultsPolicy">
+            Política de triagem: revisão obrigatória para probabilidades relevantes de mastite.
+          </p>
+
+          <!-- ═══ DASHBOARD ═══ -->
+          <div class="dashboard" id="dashboard">
+
+            <!-- Cards de resumo expandido -->
+            <div class="dashboard-cards">
+              <div class="dash-card dash-card-red">
+                <div class="dash-card-value" id="dashAlta">0</div>
+                <div class="dash-card-label">Alta suspeita</div>
+                <div class="dash-card-pct" id="dashAltaPct">0%</div>
+              </div>
+              <div class="dash-card dash-card-yellow">
+                <div class="dash-card-value" id="dashMonitorar">0</div>
+                <div class="dash-card-label">Monitorar com cautela</div>
+                <div class="dash-card-pct" id="dashMonitorarPct">0%</div>
+              </div>
+              <div class="dash-card dash-card-green">
+                <div class="dash-card-value" id="dashBaixo">0</div>
+                <div class="dash-card-label">Baixo risco</div>
+                <div class="dash-card-pct" id="dashBaixoPct">0%</div>
+              </div>
+              <div class="dash-card dash-card-outline">
+                <div class="dash-card-value" id="dashRevisao">0</div>
+                <div class="dash-card-label">Requer revisão</div>
+                <div class="dash-card-pct" id="dashRevisaoPct">0%</div>
+              </div>
+              <div class="dash-card dash-card-outline">
+                <div class="dash-card-value" id="dashMastite">0</div>
+                <div class="dash-card-label">Sinal de mastite pelo modelo</div>
+                <div class="dash-card-pct" id="dashMastitePct">0%</div>
+              </div>
+              <div class="dash-card dash-card-outline">
+                <div class="dash-card-value" id="dashProbMedia">0.000</div>
+                <div class="dash-card-label">Prob. média de mastite</div>
+                <div class="dash-card-pct">&nbsp;</div>
+              </div>
             </div>
-            <div class="summary-card summary-mastite">
-              <div class="summary-value" id="summaryMastite">0</div>
-              <div class="summary-label">Com risco de mastite</div>
+
+            <!-- Gráfico: Temperatura média por nível de risco -->
+            <div class="dash-chart-wrapper">
+              <h3 class="dash-chart-title">Temperatura média por nível de risco (°C)</h3>
+              <div class="dash-chart-container">
+                <canvas id="chartTemperatura"></canvas>
+              </div>
             </div>
-            <div class="summary-card summary-saudavel">
-              <div class="summary-value" id="summarySaudavel">0</div>
-              <div class="summary-label">Saudáveis</div>
+
+            <!-- Tabela: 15 animais de maior urgência -->
+            <div class="dash-table-wrapper">
+              <h3 class="dash-chart-title">Animais de maior urgência</h3>
+              <div class="table-wrapper">
+                <table class="data-table dash-urgency-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>ID do animal</th>
+                      <th>Prob. Mastite (%)</th>
+                      <th>Nível de risco</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashUrgencyBody"></tbody>
+                </table>
+              </div>
+              <p class="dash-table-note" id="dashUrgencyNote"></p>
             </div>
+
+            <!-- Gráfico: Distribuição por meses pós-parto -->
+            <div class="dash-chart-wrapper">
+              <h3 class="dash-chart-title">Distribuição por meses pós-parto</h3>
+              <div class="dash-chart-container">
+                <canvas id="chartMeses"></canvas>
+              </div>
+            </div>
+
           </div>
 
           <!-- Filtros da tabela de resultados -->
@@ -575,11 +637,12 @@
               <input type="text" id="filterIdInput" placeholder="Buscar ID do animal..." class="filter-input" autocomplete="off" />
             </div>
             <div class="filter-group">
-              <label for="filterClasseSelect" class="filter-label">Classe prevista</label>
+              <label for="filterClasseSelect" class="filter-label">Nível de risco</label>
               <select id="filterClasseSelect" class="filter-select">
-                <option value="todos">Todas as classes</option>
-                <option value="Mastite">Mastite</option>
-                <option value="Saudável">Saudável</option>
+                <option value="todos">Todos os níveis</option>
+                <option value="Alta suspeita">Alta suspeita</option>
+                <option value="Monitorar com cautela">Monitorar com cautela</option>
+                <option value="Baixo risco">Baixo risco</option>
               </select>
             </div>
             <div class="filter-summary" id="filterSummary">Sem filtros aplicados</div>
@@ -603,9 +666,9 @@
               <thead>
                 <tr>
                   <th>ID do animal</th>
-                  <th>Classe prevista</th>
+                  <th>Nível de risco</th>
                   <th>Prob. Mastite</th>
-                  <th>Prob. Saudável</th>
+                  <th>Ação recomendada</th>
                 </tr>
               </thead>
               <tbody id="resultsBody"></tbody>
@@ -698,7 +761,7 @@
       </div>
       <div class="footer-bottom">
         <img src="/images/asclepio-logo.png" alt="Asclépio" class="footer-logo-img" />
-        <p>Classificador de Mastite Bovina | Trabalho de Conclusão de Curso | 2026/1</p>
+        <p>Triagem de Mastite Bovina | Trabalho de Conclusão de Curso | 2026/1</p>
       </div>
     </div>
   </footer>

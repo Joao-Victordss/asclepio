@@ -11,6 +11,7 @@ const resultsPagination = document.getElementById('resultsPagination');
 const paginationInfo = document.getElementById('paginationInfo');
 const prevPageBtn = document.getElementById('prevPageBtn');
 const nextPageBtn = document.getElementById('nextPageBtn');
+const resultsPolicy = document.getElementById('resultsPolicy');
 
 const FIELD_META = [
   {
@@ -114,6 +115,9 @@ let exportFormat = 'csv';
 let exportDelimiter = ',';
 let rowCounter = 0;
 let lastResultData = null;
+let lastInputData = null;
+let chartTemperatura = null;
+let chartMeses = null;
 
 window.addEventListener('scroll', () => {
   nav.classList.toggle('scrolled', window.scrollY > 10);
@@ -321,6 +325,14 @@ analyzeBtn.addEventListener('click', async () => {
 
   hideError();
   setCsvLoading(true);
+
+  try {
+    const csvText = await readFileAsText(selectedFile);
+    const csvRows = parseCSVText(csvText);
+    lastInputData = buildInputMap(csvRows);
+  } catch {
+    lastInputData = null;
+  }
 
   const formData = new FormData();
   formData.append('arquivo', selectedFile);
@@ -637,6 +649,12 @@ analyzeManualBtn.addEventListener('click', async () => {
   hideErrorManual();
   setManualLoading(true);
 
+  lastInputData = buildInputMap(validation.rows.map((r) => ({
+    ID: r.ID,
+    Temperature: r.Temperature,
+    Months_after_giving_birth: r.Months_after_giving_birth,
+  })));
+
   await sendAndRender('/predict/manual', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -660,7 +678,7 @@ function getFilteredResults() {
   const resultados = lastResultData?.resultados || [];
   return resultados.filter((row) => {
     const matchId = filterText === '' || row.id.toLowerCase().includes(filterText.toLowerCase());
-    const matchClasse = filterClasse === 'todos' || row.classe_prevista === filterClasse;
+    const matchClasse = filterClasse === 'todos' || row.nivel_risco === filterClasse;
     return matchId && matchClasse;
   });
 }
@@ -673,7 +691,7 @@ function syncFilterSummary() {
   }
 
   if (filterClasse !== 'todos') {
-    activeFilters.push(`Classe: ${filterClasse}`);
+    activeFilters.push(`Risco: ${filterClasse}`);
   }
 
   filterSummary.textContent = activeFilters.length
@@ -770,6 +788,18 @@ function syncPageSizeButtons() {
   });
 }
 
+function getRiskRowClass(row) {
+  if (row.nivel_risco === 'Alta suspeita') return 'risk-high';
+  if (row.nivel_risco === 'Monitorar com cautela') return 'risk-medium';
+  return 'risk-low';
+}
+
+function getRiskPillClass(row) {
+  if (row.nivel_risco === 'Alta suspeita') return 'pill-risk-high';
+  if (row.nivel_risco === 'Monitorar com cautela') return 'pill-risk-medium';
+  return 'pill-risk-low';
+}
+
 function renderResultsRows() {
   const filtered = getFilteredResults();
   const totalPages = getTotalPages(filtered.length);
@@ -781,20 +811,18 @@ function renderResultsRows() {
   resultsBody.innerHTML = '';
 
   pageRows.forEach((row) => {
-    const isMastite = row.classe_prevista === 'Mastite';
     const tableRow = document.createElement('tr');
-    tableRow.className = isMastite ? 'mastite' : 'saudavel';
+    tableRow.className = getRiskRowClass(row);
 
     const probMastite = `${(row.prob_mastite * 100).toFixed(1)}%`;
-    const probSaudavel = row.prob_saudavel !== undefined
-      ? `${(row.prob_saudavel * 100).toFixed(1)}%`
-      : 'N/A';
+    const action = row.recomendacao || 'Sem recomendação disponível.';
+    const modelSignal = row.classe_prevista ? `Sinal do modelo: ${row.classe_prevista}` : '';
 
     tableRow.innerHTML = `
       <td>${esc(row.id)}</td>
-      <td><span class="pill ${isMastite ? 'pill-mastite' : 'pill-saudavel'}">${esc(row.classe_prevista)}</span></td>
+      <td><span class="pill ${getRiskPillClass(row)}">${esc(row.nivel_risco)}</span></td>
       <td>${probMastite}</td>
-      <td>${probSaudavel}</td>
+      <td>${esc(action)}${modelSignal ? `<br><small>${esc(modelSignal)}</small>` : ''}</td>
     `;
 
     resultsBody.appendChild(tableRow);
@@ -836,9 +864,12 @@ async function sendAndRender(url, requestInit, errorFn) {
 }
 
 function renderResults(data) {
-  document.getElementById('summaryTotal').textContent = data.total;
-  document.getElementById('summaryMastite').textContent = data.mastite;
-  document.getElementById('summarySaudavel').textContent = data.saudavel;
+  if (data.politica_triagem) {
+    const review = (data.politica_triagem.limiar_revisao * 100).toFixed(0);
+    const high = (data.politica_triagem.limiar_alta_suspeita * 100).toFixed(0);
+    resultsPolicy.textContent =
+      `Política atual: revisar antes da liberação do leite a partir de ${review}% de probabilidade de mastite e tratar como alta suspeita a partir de ${high}%.`;
+  }
 
   filterText = '';
   filterClasse = 'todos';
@@ -848,6 +879,11 @@ function renderResults(data) {
   syncClearFiltersBtn();
   syncExportControls();
   renderResultsRows();
+
+  resetDashboardCanvases();
+  const inputMap = lastInputData || {};
+  const merged = mergeResultsWithInput(data.resultados || [], inputMap);
+  renderDashboard(data, merged);
 
   setHidden(resultsEl, false);
   resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -937,8 +973,258 @@ document.getElementById('newAnalysisBtn').addEventListener('click', () => {
   hideResults();
   clearAllManualFieldErrors();
   lastResultData = null;
+  lastInputData = null;
   currentPage = 1;
+  resetDashboardCanvases();
 });
+
+/* ═══════════════════════════════════════════════════════
+   DASHBOARD
+════════════════════════════════════════════════════════ */
+
+function parseCSVText(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+
+  const sep = lines[0].includes(';') ? ';' : ',';
+  const headers = lines[0].split(sep).map((h) => h.trim().replace(/^["']|["']$/g, ''));
+
+  return lines.slice(1).filter((l) => l.trim()).map((line) => {
+    const values = line.split(sep).map((v) => v.trim().replace(/^["']|["']$/g, ''));
+    const row = {};
+    headers.forEach((h, i) => { row[h] = values[i] || ''; });
+    return row;
+  });
+}
+
+async function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(file);
+  });
+}
+
+function buildInputMap(rows) {
+  const map = {};
+  rows.forEach((row) => {
+    const id = String(row.ID || '').trim();
+    if (!id) return;
+    map[id] = {
+      temperatura: parseFloat(row.Temperature),
+      meses: parseFloat(row.Months_after_giving_birth),
+    };
+  });
+  return map;
+}
+
+function mergeResultsWithInput(resultados, inputMap) {
+  return resultados.map((r) => {
+    const input = inputMap[r.id] || {};
+    return {
+      ...r,
+      temperatura: Number.isFinite(input.temperatura) ? input.temperatura : null,
+      meses: Number.isFinite(input.meses) ? input.meses : null,
+    };
+  });
+}
+
+function renderDashboard(data, merged) {
+  const total = data.total || 0;
+  const alta = data.alta_suspeita || 0;
+  const monitorar = data.monitorar || 0;
+  const baixo = data.baixo_risco || 0;
+  const revisao = data.requer_revisao || 0;
+  const mastite = data.mastite || 0;
+
+  const pct = (v) => total ? `${((v / total) * 100).toFixed(1)}%` : '0%';
+
+  document.getElementById('dashAlta').textContent = alta;
+  document.getElementById('dashAltaPct').textContent = `${pct(alta)} do total`;
+  document.getElementById('dashMonitorar').textContent = monitorar;
+  document.getElementById('dashMonitorarPct').textContent = `${pct(monitorar)} do total`;
+  document.getElementById('dashBaixo').textContent = baixo;
+  document.getElementById('dashBaixoPct').textContent = `${pct(baixo)} do total`;
+  document.getElementById('dashRevisao').textContent = revisao;
+  document.getElementById('dashRevisaoPct').textContent = `${pct(revisao)} do total`;
+  document.getElementById('dashMastite').textContent = mastite;
+  document.getElementById('dashMastitePct').textContent = `${pct(mastite)} do total`;
+
+  const probMedia = total > 0
+    ? (merged.reduce((sum, r) => sum + r.prob_mastite, 0) / total)
+    : 0;
+  document.getElementById('dashProbMedia').textContent = probMedia.toFixed(3);
+
+  renderChartTemperatura(merged);
+  renderUrgencyTable(merged);
+  renderChartMeses(merged);
+}
+
+function renderChartTemperatura(merged) {
+  const groups = { 'Alta suspeita': [], 'Monitorar com cautela': [], 'Baixo risco': [] };
+  merged.forEach((r) => {
+    if (r.temperatura != null && groups[r.nivel_risco]) {
+      groups[r.nivel_risco].push(r.temperatura);
+    }
+  });
+
+  const avg = (arr) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+  const labels = ['Alta suspeita', 'Monitorar com cautela', 'Baixo risco'];
+  const values = labels.map((l) => parseFloat(avg(groups[l]).toFixed(2)));
+  const colors = ['#E24B4A', '#EF9F27', '#1D9E75'];
+
+  const hasData = values.some((v) => v > 0);
+
+  const ctx = document.getElementById('chartTemperatura');
+  if (chartTemperatura) { chartTemperatura.destroy(); chartTemperatura = null; }
+
+  if (!hasData) {
+    ctx.parentElement.innerHTML = '<p style="text-align:center;color:#9e9e9e;padding:2rem 0;font-size:.88rem;">Dados de temperatura não disponíveis para este conjunto.</p>';
+    return;
+  }
+
+  chartTemperatura = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: colors,
+        borderRadius: 6,
+        maxBarThickness: 72,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (c) => `${c.parsed.y.toFixed(2)} °C`,
+          },
+        },
+      },
+      scales: {
+        y: {
+          min: 38,
+          title: { display: true, text: '°C', font: { size: 12 } },
+          ticks: { callback: (v) => `${v}°C` },
+          grid: { color: 'rgba(0,0,0,.06)' },
+        },
+        x: {
+          grid: { display: false },
+        },
+      },
+    },
+  });
+}
+
+function renderUrgencyTable(merged) {
+  const body = document.getElementById('dashUrgencyBody');
+  const note = document.getElementById('dashUrgencyNote');
+  body.innerHTML = '';
+
+  const highRisk = merged
+    .filter((r) => r.nivel_risco === 'Alta suspeita')
+    .sort((a, b) => b.prob_mastite - a.prob_mastite)
+    .slice(0, 15);
+
+  if (highRisk.length === 0) {
+    body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#9e9e9e;padding:1.5rem;">Nenhum animal com alta suspeita nesta análise.</td></tr>';
+    note.textContent = '';
+    return;
+  }
+
+  highRisk.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    tr.className = 'urgency-high';
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td>${esc(r.id)}</td>
+      <td>${(r.prob_mastite * 100).toFixed(1)}%</td>
+      <td><span class="pill pill-risk-high">${esc(r.nivel_risco)}</span></td>
+    `;
+    body.appendChild(tr);
+  });
+
+  const totalAlta = merged.filter((r) => r.nivel_risco === 'Alta suspeita').length;
+  note.textContent = totalAlta > 15
+    ? `Mostrando os 15 mais urgentes de ${totalAlta} animais com alta suspeita.`
+    : `${totalAlta} animal(is) com alta suspeita.`;
+}
+
+function renderChartMeses(merged) {
+  const buckets = {};
+  merged.forEach((r) => {
+    if (r.meses == null) return;
+    const mes = Math.max(1, Math.min(6, Math.round(r.meses)));
+    if (!buckets[mes]) buckets[mes] = { 'Alta suspeita': 0, 'Monitorar com cautela': 0, 'Baixo risco': 0 };
+    if (buckets[mes][r.nivel_risco] != null) {
+      buckets[mes][r.nivel_risco]++;
+    }
+  });
+
+  const labels = [1, 2, 3, 4, 5, 6].map((m) => `Mês ${m}`);
+  const alta = [1, 2, 3, 4, 5, 6].map((m) => (buckets[m] || {})['Alta suspeita'] || 0);
+  const monitorar = [1, 2, 3, 4, 5, 6].map((m) => (buckets[m] || {})['Monitorar com cautela'] || 0);
+  const baixo = [1, 2, 3, 4, 5, 6].map((m) => (buckets[m] || {})['Baixo risco'] || 0);
+
+  const hasData = [...alta, ...monitorar, ...baixo].some((v) => v > 0);
+
+  const ctx = document.getElementById('chartMeses');
+  if (chartMeses) { chartMeses.destroy(); chartMeses = null; }
+
+  if (!hasData) {
+    ctx.parentElement.innerHTML = '<p style="text-align:center;color:#9e9e9e;padding:2rem 0;font-size:.88rem;">Dados de meses pós-parto não disponíveis para este conjunto.</p>';
+    return;
+  }
+
+  chartMeses = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Alta suspeita', data: alta, backgroundColor: '#E24B4A', borderRadius: 4, maxBarThickness: 36 },
+        { label: 'Monitorar com cautela', data: monitorar, backgroundColor: '#EF9F27', borderRadius: 4, maxBarThickness: 36 },
+        { label: 'Baixo risco', data: baixo, backgroundColor: '#1D9E75', borderRadius: 4, maxBarThickness: 36 },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { usePointStyle: true, pointStyle: 'circle', padding: 16, font: { size: 12 } },
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize: 1, precision: 0 },
+          grid: { color: 'rgba(0,0,0,.06)' },
+        },
+        x: {
+          grid: { display: false },
+        },
+      },
+    },
+  });
+}
+
+function resetDashboardCanvases() {
+  if (chartTemperatura) { chartTemperatura.destroy(); chartTemperatura = null; }
+  if (chartMeses) { chartMeses.destroy(); chartMeses = null; }
+
+  ['chartTemperatura', 'chartMeses'].forEach((id) => {
+    const container = document.getElementById(id)?.parentElement;
+    if (container && !container.querySelector('canvas')) {
+      container.innerHTML = `<canvas id="${id}"></canvas>`;
+    }
+  });
+}
 
 syncPageSizeButtons();
 syncClearFiltersBtn();

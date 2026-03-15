@@ -1,0 +1,99 @@
+{
+  "feature_set": "full",
+  "search_mode": "quick",
+  "refit_metric": "recall_mastite",
+  "jobs": -1,
+  "features": [
+    "Months_after_giving_birth",
+    "IUFL",
+    "EUFL",
+    "IUFR",
+    "EUFR",
+    "IURL",
+    "EURL",
+    "IURR",
+    "EURR",
+    "Temperature"
+  ],
+  "best_params": {
+    "criterion": "entropy",
+    "max_depth": null,
+    "max_features": "sqrt",
+    "min_samples_leaf": 1,
+    "min_samples_split": 2,
+    "n_estimators": 200
+  },
+  "grid_search_best_score": 0.9834212855590287,
+  "holdout_metrics": {
+    "accuracy": 0.9916666666666667,
+    "sensitivity_mastite": 0.990530303030303,
+    "specificity_saudavel": 0.9924242424242424,
+    "confusion_matrix": [
+      [
+        523,
+        5
+      ],
+      [
+        6,
+        786
+      ]
+    ],
+    "classification_report": {
+      "0": {
+        "precision": 0.9886578449905482,
+        "recall": 0.990530303030303,
+        "f1-score": 0.9895931882686849,
+        "support": 528.0
+      },
+      "1": {
+        "precision": 0.9936788874841972,
+        "recall": 0.9924242424242424,
+        "f1-score": 0.9930511686670878,
+        "support": 792.0
+      },
+      "accuracy": 0.9916666666666667,
+      "macro avg": {
+        "precision": 0.9911683662373727,
+        "recall": 0.9914772727272727,
+        "f1-score": 0.9913221784678863,
+        "support": 1320.0
+      },
+      "weighted avg": {
+        "precision": 0.9916704704867375,
+        "recall": 0.9916666666666667,
+        "f1-score": 0.9916679765077266,
+        "support": 1320.0
+      }
+    }
+  },
+  "cross_validation_metrics": {
+    "accuracy": {
+      "mean": 0.9896969696969696,
+      "std": 0.0031637292451244074
+    },
+    "balanced_accuracy": {
+      "mean": 0.9897101479980679,
+      "std": 0.003682199841723157
+    },
+    "precision_mastite": {
+      "mean": 0.9845862626886145,
+      "std": 0.0053103433538891475
+    },
+    "recall_mastite": {
+      "mean": 0.989771287014633,
+      "std": 0.00758399980184392
+    },
+    "specificity_saudavel": {
+      "mean": 0.9896490089815027,
+      "std": 0.003650899196296434
+    }
+  },
+  "scikit_learn_notes": {
+    "max_features_auto_removed": true,
+    "max_features_used_in_search": [
+      "sqrt",
+      "log2",
+      null
+    ]
+  }
+}

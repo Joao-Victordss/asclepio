@@ -23,7 +23,7 @@ CAMINHO_EXEMPLO = RAIZ / "exemplo_entrada.csv"
 STATIC_DIR  = RAIZ / "static"
 IMAGES_DIR  = RAIZ / "images"
 
-COLUNAS_ESPERADAS = [
+COLUNAS_PADRAO = [
     "Months_after_giving_birth",
     "IUFL", "EUFL",
     "IUFR", "EUFR",
@@ -36,6 +36,18 @@ CLASSES = {
     0: "Mastite",
     1: "Saudável",
 }
+NIVEIS_RISCO = {
+    "alto": "Alta suspeita",
+    "moderado": "Monitorar com cautela",
+    "baixo": "Baixo risco",
+}
+
+# Política conservadora para apoio ao profissional:
+# - >= 0.60: alto risco, revisar imediatamente e segregar o leite.
+# - >= 0.25: monitorar com cautela e revisar antes de liberar o leite.
+# - < 0.25: baixo risco, mantendo monitoramento de rotina.
+LIMIAR_ALTA_SUSPEITA = 0.60
+LIMIAR_REVISAO = 0.25
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
 
@@ -75,8 +87,8 @@ async def lifespan(app: FastAPI):
 
 # ── App FastAPI ───────────────────────────────────────────────────────────────
 app = FastAPI(
-    title="Classificador de Mastite Bovina",
-    description="API para classificação de risco de mastite via Machine Learning (Aprendizado de Máquina).",
+    title="Triagem de Mastite Bovina",
+    description="API para apoio a triagem de risco de mastite via Machine Learning (Aprendizado de Maquina).",
     version="1.0.0",
     lifespan=lifespan,
 )
@@ -136,8 +148,11 @@ class LoteManual(BaseModel):
 class ResultadoExportacao(BaseModel):
     id: str
     classe_prevista: str
+    nivel_risco: str | None = None
     prob_mastite: float
     prob_saudavel: float | None = None
+    requer_revisao: bool | None = None
+    recomendacao: str | None = None
 
 
 class ExportacaoPayload(BaseModel):
@@ -175,7 +190,7 @@ def baixar_exemplo():
     )
 
 
-@app.post("/predict", summary="Classificar animais via CSV")
+@app.post("/predict", summary="Triar animais via CSV")
 async def predict(arquivo: UploadFile = File(..., description="Arquivo CSV com os dados dos animais")):
     """
     Recebe um CSV com os dados dos sensores e retorna a classificação de cada animal.
@@ -191,7 +206,7 @@ async def predict(arquivo: UploadFile = File(..., description="Arquivo CSV com o
         await arquivo.close()
 
 
-@app.post("/predict/manual", summary="Classificar animais via entrada manual")
+@app.post("/predict/manual", summary="Triar animais via entrada manual")
 async def predict_manual(payload: LoteManual):
     modelo = _obter_modelo()
     if not payload.registros:
@@ -226,15 +241,23 @@ async def exportar_resultados(payload: ExportacaoPayload):
 
 # ── Funções auxiliares ────────────────────────────────────────────────────────
 
-def _preparar_dados(df: pd.DataFrame) -> pd.DataFrame:
-    colunas_ausentes = [c for c in COLUNAS_ESPERADAS if c not in df.columns]
+def _obter_colunas_modelo(modelo) -> list[str]:
+    colunas_modelo = getattr(modelo, "feature_names_in_", None)
+    if colunas_modelo is None:
+        return COLUNAS_PADRAO
+    return [str(coluna) for coluna in colunas_modelo]
+
+
+def _preparar_dados(modelo, df: pd.DataFrame) -> pd.DataFrame:
+    colunas_esperadas = _obter_colunas_modelo(modelo)
+    colunas_ausentes = [c for c in colunas_esperadas if c not in df.columns]
     if colunas_ausentes:
         raise ValueError(
             f"Colunas ausentes no CSV: {', '.join(colunas_ausentes)}. "
             "Veja o arquivo de exemplo para o formato correto."
         )
 
-    df_sel = df.loc[:, COLUNAS_ESPERADAS].apply(pd.to_numeric, errors="coerce")
+    df_sel = df.loc[:, colunas_esperadas].apply(pd.to_numeric, errors="coerce")
 
     cols_invalidas = df_sel.columns[df_sel.isna().any()].tolist()
     if cols_invalidas:
@@ -284,6 +307,28 @@ def _obter_modelo():
     return modelo
 
 
+def _avaliar_triagem(prob_mastite: float) -> dict:
+    if prob_mastite >= LIMIAR_ALTA_SUSPEITA:
+        return {
+            "nivel_risco": NIVEIS_RISCO["alto"],
+            "requer_revisao": True,
+            "recomendacao": "Segregar o leite e acionar revisao veterinaria imediata.",
+        }
+
+    if prob_mastite >= LIMIAR_REVISAO:
+        return {
+            "nivel_risco": NIVEIS_RISCO["moderado"],
+            "requer_revisao": True,
+            "recomendacao": "Nao liberar o leite antes de nova avaliacao clinica e revisao dos sensores.",
+        }
+
+    return {
+        "nivel_risco": NIVEIS_RISCO["baixo"],
+        "requer_revisao": False,
+        "recomendacao": "Sem alerta forte no momento. Manter monitoramento de rotina do animal.",
+    }
+
+
 def _executar_predicao(modelo, df: pd.DataFrame) -> dict:
     if "ID" not in df.columns:
         raise HTTPException(
@@ -292,7 +337,7 @@ def _executar_predicao(modelo, df: pd.DataFrame) -> dict:
         )
 
     try:
-        df_modelo = _preparar_dados(df)
+        df_modelo = _preparar_dados(modelo, df)
         probabilidades = modelo.predict_proba(df_modelo)
         predicoes = modelo.predict(df_modelo)
     except ValueError as exc:
@@ -314,10 +359,15 @@ def _executar_predicao(modelo, df: pd.DataFrame) -> dict:
     idx_saudavel = indices_classe.get(1)
 
     for animal_id, pred, probs in zip(df["ID"].astype(str), predicoes, probabilidades):
+        prob_mastite = round(float(probs[idx_mastite]), 4)
+        triagem = _avaliar_triagem(prob_mastite)
         item = {
             "id": animal_id,
             "classe_prevista": CLASSES.get(int(pred), str(pred)),
-            "prob_mastite": round(float(probs[idx_mastite]), 4),
+            "nivel_risco": triagem["nivel_risco"],
+            "prob_mastite": prob_mastite,
+            "requer_revisao": triagem["requer_revisao"],
+            "recomendacao": triagem["recomendacao"],
         }
         if idx_saudavel is not None:
             item["prob_saudavel"] = round(float(probs[idx_saudavel]), 4)
@@ -325,11 +375,23 @@ def _executar_predicao(modelo, df: pd.DataFrame) -> dict:
 
     total = len(resultados)
     n_mastite = sum(1 for r in resultados if r["classe_prevista"] == CLASSES[0])
+    n_alta_suspeita = sum(1 for r in resultados if r["nivel_risco"] == NIVEIS_RISCO["alto"])
+    n_monitorar = sum(1 for r in resultados if r["nivel_risco"] == NIVEIS_RISCO["moderado"])
+    n_baixo_risco = sum(1 for r in resultados if r["nivel_risco"] == NIVEIS_RISCO["baixo"])
 
     return {
         "total": total,
         "mastite": n_mastite,
         "saudavel": total - n_mastite,
+        "requer_revisao": n_alta_suspeita + n_monitorar,
+        "alta_suspeita": n_alta_suspeita,
+        "monitorar": n_monitorar,
+        "baixo_risco": n_baixo_risco,
+        "politica_triagem": {
+            "limiar_revisao": LIMIAR_REVISAO,
+            "limiar_alta_suspeita": LIMIAR_ALTA_SUSPEITA,
+            "objetivo": "Apoio conservador a decisao para reduzir risco de leite contaminado.",
+        },
         "resultados": resultados,
     }
 
@@ -340,9 +402,12 @@ def _montar_linhas_exportacao(resultados: list[ResultadoExportacao]) -> list[dic
         linhas.append(
             {
                 "ID do animal": item.id,
-                "Classe prevista": item.classe_prevista,
+                "Sinal do modelo": item.classe_prevista,
+                "Nivel de risco": item.nivel_risco,
                 "Prob. Mastite": item.prob_mastite,
                 "Prob. Saudável": item.prob_saudavel,
+                "Requer revisão": item.requer_revisao,
+                "Ação recomendada": item.recomendacao,
             }
         )
     return linhas
@@ -408,6 +473,10 @@ def _xlsx_workbook_rels() -> str:
 </Relationships>"""
 
 
+def value_is_finite(valor: float) -> bool:
+    return math.isfinite(float(valor))
+
+
 def _xlsx_sheet(linhas: list[dict]) -> str:
     cabecalhos = list(linhas[0].keys())
     todas_linhas = [cabecalhos] + [list(linha.values()) for linha in linhas]
@@ -442,10 +511,6 @@ def _numero_para_coluna_excel(numero: int) -> str:
         numero, resto = divmod(numero - 1, 26)
         letras.append(chr(65 + resto))
     return "".join(reversed(letras))
-
-
-def value_is_finite(valor: float) -> bool:
-    return math.isfinite(float(valor))
 
 
 # ── Ponto de entrada (para rodar localmente) ─────────────────────────────────

@@ -70,10 +70,28 @@ def limpar_e_padronizar(df: pd.DataFrame) -> pd.DataFrame:
     if NOME_ROTULO_BRUTO != "classe":
         df = df.rename(columns={NOME_ROTULO_BRUTO: "classe"})
 
-    # Exemplo se vier como texto:
-    # df["classe"] = df["classe"].map({"Mastitis": 0, "Healthy": 1})
-
+    # -------------------------------------------------------------------------
+    # ATENCAO: verifique se os rotulos estao corretos antes de treinar.
+    #
+    # No dataset Mendeley (usado no artigo MasPA), class1=1 significa
+    # MASTITE e class1=0 significa SAUDAVEL — o oposto do que este codigo
+    # espera (0=mastite, 1=saudavel).
+    #
+    # Se o seu CSV bruto usar essa convencao, descomente a linha abaixo:
+    df["classe"] = 1 - df["classe"]   # inverte: 1->0(mastite), 0->1(saudavel)
+    # -------------------------------------------------------------------------
     df["classe"] = df["classe"].astype(int)
+
+    # Validacao automatica: mastite deve ter temperatura media MAIOR
+    temp_cls0 = df[df["classe"] == 0]["Temperature"].mean()
+    temp_cls1 = df[df["classe"] == 1]["Temperature"].mean()
+    print(f"Temp media classe 0: {temp_cls0:.2f} | Temp media classe 1: {temp_cls1:.2f}")
+    if temp_cls0 < temp_cls1:
+        print("AVISO: classe 0 tem temperatura MENOR que classe 1.")
+        print("       Se classe 0 = mastite, isso e clinicamente INVERTIDO.")
+        print("       Considere descomentar a linha de inversao acima.")
+    else:
+        print("OK: classe 0 tem temperatura maior (padrao clinico correto para mastite).")
     print("Distribuição de classes (após limpeza):")
     print(df["classe"].value_counts())
 

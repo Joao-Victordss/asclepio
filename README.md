@@ -1,6 +1,6 @@
 # classificador-mastite-iot
 
-Projeto em Python para classificar risco de mastite em vacas leiteiras usando dados de sensores de úbere e temperatura. A metodologia de preparação de dados e escolha do modelo é inspirada no artigo “MasPA: A Machine Learning Application to Predict Risk of Mastitis in Cattle from AMS Sensor Data” (AgriEngineering, 2021, DOI: https://doi.org/10.3390/agriengineering3030037), adaptada para este repositório.
+Projeto em Python para apoiar a triagem de mastite em vacas leiteiras usando dados de sensores de úbere e temperatura. A metodologia de preparação de dados e escolha do modelo é inspirada no artigo “MasPA: A Machine Learning Application to Predict Risk of Mastitis in Cattle from AMS Sensor Data” (AgriEngineering, 2021, DOI: https://doi.org/10.3390/agriengineering3030037), adaptada para este repositório.
 
 ## Estrutura do projeto
 ```
@@ -41,7 +41,8 @@ uvicorn main:app --reload
    - preencher dados manualmente;
    - baixar o CSV de exemplo;
    - exportar o resultado da classificação em CSV ou XLSX;
-   - escolher o delimitador do CSV na exportação.
+   - escolher o delimitador do CSV na exportação;
+   - receber uma triagem conservadora com nível de risco e recomendação de revisão.
 
 ### Modelo de arquivo para upload
 - Inclua uma coluna `ID` e as features numéricas: `Months_after_giving_birth, IUFL, EUFL, IUFR, EUFR, IURL, EURL, IURR, EURR, Temperature`.
@@ -53,7 +54,8 @@ uvicorn main:app --reload
   `Months_after_giving_birth, IUFL, EUFL, IUFR, EUFR, IURL, EURL, IURR, EURR, Temperature`
 - Exemplos:
   - Exemplo de entrada: `exemplo_entrada.csv`
-  - Classe prevista: `Mastite` ou `Saudável`
+  - Sinal do modelo: `Mastite` ou `Saudável`
+  - Triagem principal: `Alta suspeita`, `Monitorar com cautela` ou `Baixo risco`
   - Probabilidades: `prob_mastite` (0 = mastite), `prob_saudavel` (1 = saudável)
 - O app valida tipos numéricos e recusa linhas com valores vazios/inválidos.
 
@@ -67,14 +69,23 @@ uvicorn main:app --reload
 ## Treinamento do modelo
 Os scripts de preparação e treino continuam no repositório como apoio técnico do TCC, mas não fazem parte do fluxo principal da aplicação web.
 
-Para atualizar o modelo:
+Para atualizar o modelo com foco em não deixar casos de mastite passarem:
 ```bash
 python src/dados/preparar_base.py
-python src/modelos/treinar_random_forest.py
+python src/modelos/treinar_random_forest.py --feature-set full --search-mode quick --refit-metric recall_mastite --jobs -1
 ```
 
+Se quiser uma busca mais completa:
+```bash
+python src/modelos/treinar_random_forest.py --feature-set full --search-mode standard --refit-metric recall_mastite --jobs -1
+```
+
+O script salva:
+- `modelos/random_forest_mastite.pkl.gz`
+- `modelos/random_forest_mastite_relatorio.json`
+
 ## Limitações conhecidas
-- O modelo foi treinado com Random Forest simples; não há comparação com modelos mais leves (ex.: LightGBM).  
+- O modelo foi organizado como ferramenta de triagem conservadora; o resultado deve ser usado junto com avaliação clínica e rotina operacional da fazenda.  
 - Não há explicabilidade por instância (SHAP/LIME).  
 - Dados de treino não acompanham o repositório por privacidade.  
 - O app não substitui diagnóstico veterinário.
