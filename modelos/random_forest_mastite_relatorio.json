@@ -1,5 +1,5 @@
 {
-  "feature_set": "full",
+  "feature_set": "engineered",
   "search_mode": "quick",
   "refit_metric": "recall_mastite",
   "jobs": -1,
@@ -13,87 +13,355 @@
     "EURL",
     "IURR",
     "EURR",
-    "Temperature"
+    "Temperature",
+    "sensor_mean",
+    "sensor_std",
+    "sensor_min",
+    "sensor_max",
+    "sensor_range",
+    "front_mean",
+    "rear_mean",
+    "left_mean",
+    "right_mean",
+    "internal_mean",
+    "external_mean",
+    "front_rear_abs_diff",
+    "left_right_abs_diff",
+    "internal_external_abs_diff",
+    "temperature_sensor_mean_diff",
+    "months_temperature_product",
+    "quarter_fl_mean",
+    "quarter_fr_mean",
+    "quarter_rl_mean",
+    "quarter_rr_mean",
+    "quarter_mean_range",
+    "front_quarter_abs_diff",
+    "rear_quarter_abs_diff"
   ],
+  "feature_count": 33,
+  "models_evaluated": [
+    "random_forest",
+    "extra_trees",
+    "balanced_random_forest"
+  ],
+  "model_comparison": [
+    {
+      "model": "random_forest",
+      "best_score": 0.9941464518003545,
+      "best_params": {
+        "criterion": "gini",
+        "max_depth": null,
+        "max_features": "sqrt",
+        "min_samples_leaf": 1,
+        "n_estimators": 400
+      },
+      "mean_accuracy": 0.9946969696969697,
+      "mean_balanced_accuracy": 0.9945429068513543,
+      "mean_precision_mastite": 0.9924857017621355,
+      "mean_recall_mastite": 0.9941464518003545,
+      "mean_specificity_saudavel": 0.9949393619023541,
+      "selection_metric": "recall_mastite"
+    },
+    {
+      "model": "balanced_random_forest",
+      "best_score": 0.9941055603671097,
+      "best_params": {
+        "criterion": "entropy",
+        "max_depth": null,
+        "max_features": "sqrt",
+        "min_samples_leaf": 1,
+        "n_estimators": 500
+      },
+      "mean_accuracy": 0.9946969696969697,
+      "mean_balanced_accuracy": 0.9945239033869531,
+      "mean_precision_mastite": 0.9924788704620833,
+      "mean_recall_mastite": 0.9941055603671097,
+      "mean_specificity_saudavel": 0.9949422464067963,
+      "selection_metric": "recall_mastite"
+    },
+    {
+      "model": "extra_trees",
+      "best_score": 0.9879185760124052,
+      "best_params": {
+        "criterion": "gini",
+        "max_depth": null,
+        "max_features": "sqrt",
+        "min_samples_leaf": 1,
+        "n_estimators": 300
+      },
+      "mean_accuracy": 0.9918560606060606,
+      "mean_balanced_accuracy": 0.9911114198831132,
+      "mean_precision_mastite": 0.9915114067686901,
+      "mean_recall_mastite": 0.9879185760124052,
+      "mean_specificity_saudavel": 0.9943042637538211,
+      "selection_metric": "recall_mastite"
+    }
+  ],
+  "best_model": "random_forest",
   "best_params": {
-    "criterion": "entropy",
+    "criterion": "gini",
     "max_depth": null,
     "max_features": "sqrt",
     "min_samples_leaf": 1,
-    "min_samples_split": 2,
-    "n_estimators": 200
+    "n_estimators": 400
   },
-  "grid_search_best_score": 0.9834212855590287,
+  "grid_search_best_score": 0.9941464518003545,
+  "group_column": "Cow_ID",
+  "evaluation_split": "por animal (Cow_ID)",
   "holdout_metrics": {
-    "accuracy": 0.9916666666666667,
-    "sensitivity_mastite": 0.990530303030303,
-    "specificity_saudavel": 0.9924242424242424,
+    "accuracy": 0.9856060606060606,
+    "sensitivity_mastite": 0.974910394265233,
+    "specificity_saudavel": 0.9934383202099738,
     "confusion_matrix": [
       [
-        523,
-        5
+        544,
+        14
       ],
       [
-        6,
-        786
+        5,
+        757
       ]
     ],
     "classification_report": {
       "0": {
-        "precision": 0.9886578449905482,
-        "recall": 0.990530303030303,
-        "f1-score": 0.9895931882686849,
-        "support": 528.0
+        "precision": 0.9908925318761385,
+        "recall": 0.974910394265233,
+        "f1-score": 0.982836495031617,
+        "support": 558.0
       },
       "1": {
-        "precision": 0.9936788874841972,
-        "recall": 0.9924242424242424,
-        "f1-score": 0.9930511686670878,
-        "support": 792.0
+        "precision": 0.9818417639429312,
+        "recall": 0.9934383202099738,
+        "f1-score": 0.9876060013046314,
+        "support": 762.0
       },
-      "accuracy": 0.9916666666666667,
+      "accuracy": 0.9856060606060606,
       "macro avg": {
-        "precision": 0.9911683662373727,
-        "recall": 0.9914772727272727,
-        "f1-score": 0.9913221784678863,
+        "precision": 0.9863671479095348,
+        "recall": 0.9841743572376034,
+        "f1-score": 0.9852212481681242,
         "support": 1320.0
       },
       "weighted avg": {
-        "precision": 0.9916704704867375,
-        "recall": 0.9916666666666667,
-        "f1-score": 0.9916679765077266,
+        "precision": 0.9856677703874234,
+        "recall": 0.9856060606060606,
+        "f1-score": 0.9855898009255843,
         "support": 1320.0
       }
     }
   },
+  "threshold_analysis": [
+    {
+      "threshold": 0.6,
+      "tp_mastite": 544,
+      "fn_mastite": 14,
+      "fp_mastite": 5,
+      "tn_saudavel": 757,
+      "recall_mastite": 0.974910394265233,
+      "specificity_saudavel": 0.9934383202099738,
+      "precision_mastite": 0.9908925318761385,
+      "revisar": 549
+    },
+    {
+      "threshold": 0.5,
+      "tp_mastite": 544,
+      "fn_mastite": 14,
+      "fp_mastite": 5,
+      "tn_saudavel": 757,
+      "recall_mastite": 0.974910394265233,
+      "specificity_saudavel": 0.9934383202099738,
+      "precision_mastite": 0.9908925318761385,
+      "revisar": 549
+    },
+    {
+      "threshold": 0.4,
+      "tp_mastite": 547,
+      "fn_mastite": 11,
+      "fp_mastite": 12,
+      "tn_saudavel": 750,
+      "recall_mastite": 0.9802867383512545,
+      "specificity_saudavel": 0.984251968503937,
+      "precision_mastite": 0.9785330948121646,
+      "revisar": 559
+    },
+    {
+      "threshold": 0.3,
+      "tp_mastite": 554,
+      "fn_mastite": 4,
+      "fp_mastite": 18,
+      "tn_saudavel": 744,
+      "recall_mastite": 0.992831541218638,
+      "specificity_saudavel": 0.9763779527559056,
+      "precision_mastite": 0.9685314685314685,
+      "revisar": 572
+    },
+    {
+      "threshold": 0.25,
+      "tp_mastite": 555,
+      "fn_mastite": 3,
+      "fp_mastite": 22,
+      "tn_saudavel": 740,
+      "recall_mastite": 0.9946236559139785,
+      "specificity_saudavel": 0.9711286089238845,
+      "precision_mastite": 0.9618717504332756,
+      "revisar": 577
+    },
+    {
+      "threshold": 0.2,
+      "tp_mastite": 556,
+      "fn_mastite": 2,
+      "fp_mastite": 24,
+      "tn_saudavel": 738,
+      "recall_mastite": 0.996415770609319,
+      "specificity_saudavel": 0.968503937007874,
+      "precision_mastite": 0.9586206896551724,
+      "revisar": 580
+    },
+    {
+      "threshold": 0.15,
+      "tp_mastite": 556,
+      "fn_mastite": 2,
+      "fp_mastite": 30,
+      "tn_saudavel": 732,
+      "recall_mastite": 0.996415770609319,
+      "specificity_saudavel": 0.9606299212598425,
+      "precision_mastite": 0.9488054607508533,
+      "revisar": 586
+    },
+    {
+      "threshold": 0.1,
+      "tp_mastite": 558,
+      "fn_mastite": 0,
+      "fp_mastite": 46,
+      "tn_saudavel": 716,
+      "recall_mastite": 1.0,
+      "specificity_saudavel": 0.9396325459317585,
+      "precision_mastite": 0.9238410596026491,
+      "revisar": 604
+    }
+  ],
   "cross_validation_metrics": {
     "accuracy": {
-      "mean": 0.9896969696969696,
-      "std": 0.0031637292451244074
+      "mean": 0.9950000000000001,
+      "std": 0.004445879015491281
     },
     "balanced_accuracy": {
-      "mean": 0.9897101479980679,
-      "std": 0.003682199841723157
+      "mean": 0.994904920217175,
+      "std": 0.005055652889608041
     },
     "precision_mastite": {
-      "mean": 0.9845862626886145,
-      "std": 0.0053103433538891475
+      "mean": 0.9929460740687475,
+      "std": 0.007422196427484588
     },
     "recall_mastite": {
-      "mean": 0.989771287014633,
-      "std": 0.00758399980184392
+      "mean": 0.9938683985050565,
+      "std": 0.009352883951267588
     },
     "specificity_saudavel": {
-      "mean": 0.9896490089815027,
-      "std": 0.003650899196296434
+      "mean": 0.9959414419292936,
+      "std": 0.004455713294335698
     }
   },
-  "scikit_learn_notes": {
-    "max_features_auto_removed": true,
-    "max_features_used_in_search": [
-      "sqrt",
-      "log2",
-      null
-    ]
-  }
+  "top_feature_importances": [
+    {
+      "feature": "sensor_max",
+      "importance": 0.12392327361997209
+    },
+    {
+      "feature": "left_right_abs_diff",
+      "importance": 0.10648196215047409
+    },
+    {
+      "feature": "quarter_mean_range",
+      "importance": 0.10514953351678695
+    },
+    {
+      "feature": "sensor_std",
+      "importance": 0.09825852729286594
+    },
+    {
+      "feature": "sensor_range",
+      "importance": 0.08881008813346894
+    },
+    {
+      "feature": "front_rear_abs_diff",
+      "importance": 0.0837947780848485
+    },
+    {
+      "feature": "sensor_mean",
+      "importance": 0.043385063857544974
+    },
+    {
+      "feature": "external_mean",
+      "importance": 0.04131416623415233
+    },
+    {
+      "feature": "temperature_sensor_mean_diff",
+      "importance": 0.03180332738898821
+    },
+    {
+      "feature": "internal_external_abs_diff",
+      "importance": 0.026167757940972713
+    },
+    {
+      "feature": "internal_mean",
+      "importance": 0.02478750413540374
+    },
+    {
+      "feature": "front_quarter_abs_diff",
+      "importance": 0.023756661660336856
+    },
+    {
+      "feature": "EUFR",
+      "importance": 0.016032311491084097
+    },
+    {
+      "feature": "sensor_min",
+      "importance": 0.014008062965991197
+    },
+    {
+      "feature": "rear_mean",
+      "importance": 0.013658419562916212
+    },
+    {
+      "feature": "left_mean",
+      "importance": 0.013380000501547576
+    },
+    {
+      "feature": "EURL",
+      "importance": 0.013019126486081554
+    },
+    {
+      "feature": "IUFR",
+      "importance": 0.012859431428861735
+    },
+    {
+      "feature": "rear_quarter_abs_diff",
+      "importance": 0.012148212925408899
+    },
+    {
+      "feature": "IURL",
+      "importance": 0.012063589037714418
+    },
+    {
+      "feature": "Temperature",
+      "importance": 0.010899540885444963
+    },
+    {
+      "feature": "quarter_rr_mean",
+      "importance": 0.010866815656532951
+    },
+    {
+      "feature": "quarter_fr_mean",
+      "importance": 0.010522248436617344
+    },
+    {
+      "feature": "front_mean",
+      "importance": 0.009992611322270454
+    },
+    {
+      "feature": "IUFL",
+      "importance": 0.00933545740897208
+    }
+  ]
 }

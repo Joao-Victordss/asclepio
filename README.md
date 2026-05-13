@@ -1,95 +1,121 @@
 # classificador-mastite-iot
 
-Projeto em Python para apoiar a triagem de mastite em vacas leiteiras usando dados de sensores de úbere e temperatura. A metodologia de preparação de dados e escolha do modelo é inspirada no artigo “MasPA: A Machine Learning Application to Predict Risk of Mastitis in Cattle from AMS Sensor Data” (AgriEngineering, 2021, DOI: https://doi.org/10.3390/agriengineering3030037), adaptada para este repositório.
+Projeto Python para treinar e avaliar modelos de classificação de mastite bovina a partir de dados de sensores do úbere, leitura térmica da região mamária e meses pós-parto.
 
-## Estrutura do projeto
-```
+A metodologia foi inspirada no artigo “MasPA: A Machine Learning Application to Predict Risk of Mastitis in Cattle from AMS Sensor Data” (AgriEngineering, 2021, DOI: https://doi.org/10.3390/agriengineering3030037), adaptada para este repositório.
+
+## Estrutura
+
+```text
 classificador-mastite-iot/
-├─ main.py                            # API FastAPI + servidor do frontend
-├─ static/                            # HTML, CSS e JavaScript da interface
-├─ images/                            # logos e ícones da interface
-├─ modelos/                           # modelo treinado (.pkl.gz ou .pkl)
+├─ dados/
+│  ├─ bruto/mastite_iot_bruto.csv
+│  └─ processado/
+│     ├─ mastite_iot_tratado.csv
+│     └─ mastite_iot_balanceado.csv
+├─ modelos/
+│  ├─ random_forest_mastite.pkl.gz
+│  └─ random_forest_mastite_relatorio.json
 ├─ src/
-│  ├─ dados/preparar_base.py          # preparação da base (apoio acadêmico)
-│  └─ modelos/treinar_random_forest.py# treino do Random Forest
+│  ├─ dados/preparar_base.py
+│  └─ modelos/treinar_random_forest.py
 ├─ requirements.txt
-├─ exemplo_entrada.csv                # exemplo de entrada para inferência
 └─ README.md
 ```
 
-## Preparação do ambiente local
-1) Criar e ativar o ambiente virtual (Windows PowerShell):
-```powershell
-python -m venv .venv
-.\.venv\Scripts\activate
-```
-2) Instalar as dependências:
+## Ambiente
+
 ```bash
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Execução da aplicação
-1) Garanta que o modelo `modelos/random_forest_mastite.pkl.gz` exista no projeto.
-   - O arquivo `modelos/random_forest_mastite.pkl` continua aceito como fallback.
-2) Inicie a aplicação:
-```bash
-uvicorn main:app --reload
+No Windows PowerShell:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -r requirements.txt
 ```
-3) Abra `http://127.0.0.1:8000`.
-4) Use a interface web para:
-   - enviar um CSV;
-   - preencher dados manualmente;
-   - baixar o CSV de exemplo;
-   - exportar o resultado da classificação em CSV ou XLSX;
-   - escolher o delimitador do CSV na exportação;
-   - receber uma triagem conservadora com nível de risco e recomendação de revisão.
 
-### Modelo de arquivo para upload
-- Inclua uma coluna `ID` e as features numéricas: `Months_after_giving_birth, IUFL, EUFL, IUFR, EUFR, IURL, EURL, IURR, EURR, Temperature`.
-- Use ponto como separador decimal e vírgula como separador de coluna (CSV padrão).
-- Há um botão na interface para baixar `exemplo_entrada.csv`, que já está no repositório.
+## Preparação dos dados
 
-## Formato esperado dos dados
-- O CSV deve conter uma coluna `ID` (identificador do animal) e as features numéricas:
-  `Months_after_giving_birth, IUFL, EUFL, IUFR, EUFR, IURL, EURL, IURR, EURR, Temperature`
-- Exemplos:
-  - Exemplo de entrada: `exemplo_entrada.csv`
-  - Sinal do modelo: `Mastite` ou `Saudável`
-  - Triagem principal: `Alta suspeita`, `Monitorar com cautela` ou `Baixo risco`
-  - Probabilidades: `prob_mastite` (0 = mastite), `prob_saudavel` (1 = saudável)
-- O app valida tipos numéricos e recusa linhas com valores vazios/inválidos.
+A base bruta esperada fica em:
 
-## Endpoints principais
-- `GET /` serve a interface web.
-- `GET /exemplo` baixa o CSV de exemplo.
-- `POST /predict` recebe um CSV via `multipart/form-data`.
-- `POST /predict/manual` recebe dados manuais em JSON.
-- `POST /export/results` exporta os resultados em CSV ou XLSX.
+```text
+dados/bruto/mastite_iot_bruto.csv
+```
 
-## Treinamento do modelo
-Os scripts de preparação e treino continuam no repositório como apoio técnico do TCC, mas não fazem parte do fluxo principal da aplicação web.
+A base MasPA/Mendeley usa `class1=1` para mastite e `class1=0` para saudável. O script de preparação converte para a convenção usada no treinamento:
 
-Para atualizar o modelo com foco em não deixar casos de mastite passarem:
+- `classe=0`: mastite
+- `classe=1`: saudável
+
+O script também preserva `Cow_ID`, usado para separar treino/teste por animal e evitar que registros da mesma vaca apareçam nos dois conjuntos.
+
 ```bash
 python src/dados/preparar_base.py
-python src/modelos/treinar_random_forest.py --feature-set full --search-mode quick --refit-metric recall_mastite --jobs -1
 ```
 
-Se quiser uma busca mais completa:
+Saídas:
+
+- `dados/processado/mastite_iot_tratado.csv`
+- `dados/processado/mastite_iot_balanceado.csv`
+
+## Treinamento
+
+Treino rápido priorizando recall de mastite, com features derivadas e comparação entre Random Forest, Extra Trees e Balanced Random Forest:
+
 ```bash
-python src/modelos/treinar_random_forest.py --feature-set full --search-mode standard --refit-metric recall_mastite --jobs -1
+python src/modelos/treinar_random_forest.py --feature-set engineered --search-mode quick --refit-metric recall_mastite --models all --jobs -1
 ```
 
-O script salva:
-- `modelos/random_forest_mastite.pkl.gz`
-- `modelos/random_forest_mastite_relatorio.json`
+Busca mais ampla:
 
-## Limitações conhecidas
-- O modelo foi organizado como ferramenta de triagem conservadora; o resultado deve ser usado junto com avaliação clínica e rotina operacional da fazenda.  
-- Não há explicabilidade por instância (SHAP/LIME).  
-- Dados de treino não acompanham o repositório por privacidade.  
-- O app não substitui diagnóstico veterinário.
+```bash
+python src/modelos/treinar_random_forest.py --feature-set engineered --search-mode standard --refit-metric recall_mastite --models all --jobs -1
+```
+
+O treino exige `Cow_ID` por padrão e usa `StratifiedGroupKFold` para avaliação por animal. Para bases sem identificador de animal, use explicitamente:
+
+```bash
+python src/modelos/treinar_random_forest.py --allow-row-split
+```
+
+## Saídas do modelo
+
+- `modelos/random_forest_mastite.pkl.gz`: modelo treinado comprimido.
+- `modelos/random_forest_mastite_relatorio.json`: métricas, hiperparâmetros, comparação de modelos, análise de limiares e importância das features.
+
+Último treino registrado:
+
+- Holdout por animal (`Cow_ID`)
+- Melhor modelo: `random_forest`
+- Features: `engineered` (`33` colunas)
+- Acurácia: `98,56%`
+- Sensibilidade mastite: `97,49%`
+- Especificidade saudável: `99,34%`
+- Validação cruzada por animal: `99,50% ± 0,44%`
+- Recall mastite na validação cruzada: `99,39% ± 0,94%`
+
+No holdout, a matriz de confusão foi:
+
+```text
+[[544, 14],
+ [  5, 757]]
+```
+
+Com limiar conservador de revisão em `0.25`, os falsos negativos de mastite caem de `14` para `3`, com `22` falsos alertas em saudáveis.
+
+## Limitações
+
+- O modelo é uma ferramenta de apoio à triagem, não diagnóstico definitivo.
+- A avaliação correta deve ser feita por animal (`Cow_ID`), não por linha.
+- Ainda não há explicabilidade por instância (SHAP/LIME).
+- Próxima etapa planejada: calibrar limiares de decisão e adicionar explicabilidade por instância.
 
 ## Referências
-- GHAFOOR, Naeem Abdul; SITKOWSKA, Beata. MasPA: a machine learning application to predict risk of mastitis in cattle from AMS sensor data. *AgriEngineering*, Basel, v. 3, n. 3, p. 575-583, 2021. DOI: 10.3390/agriengineering3030037. Acesso em: 10 dez. 2025.
+
+- GHAFOOR, Naeem Abdul; SITKOWSKA, Beata. MasPA: a machine learning application to predict risk of mastitis in cattle from AMS sensor data. *AgriEngineering*, Basel, v. 3, n. 3, p. 575-583, 2021. DOI: 10.3390/agriengineering3030037.
 - Repositório original relacionado: https://github.com/naeemmrz/MasPA.py
