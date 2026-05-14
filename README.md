@@ -47,10 +47,12 @@ A base bruta esperada fica em:
 dados/bruto/mastite_iot_bruto.csv
 ```
 
-A base MasPA/Mendeley usa `class1=1` para mastite e `class1=0` para saudável. O script de preparação converte para a convenção usada no treinamento:
+A base MasPA/Mendeley usa `class1=1` para mastite e `class1=0` para saudável. O script de preparação mantém essa convenção no campo padronizado `classe`, sem inversão:
 
-- `classe=0`: mastite
-- `classe=1`: saudável
+- `classe=1`: mastite
+- `classe=0`: saudável
+
+Essa decisão deixa a mastite como classe positiva do modelo, o que facilita a leitura das métricas de sensibilidade, recall e análise de limiares.
 
 O script também preserva `Cow_ID`, usado para separar treino/teste por animal e evitar que registros da mesma vaca apareçam nos dois conjuntos.
 
@@ -91,22 +93,23 @@ python src/modelos/treinar_random_forest.py --allow-row-split
 Último treino registrado:
 
 - Holdout por animal (`Cow_ID`)
-- Melhor modelo: `random_forest`
+- Convenção de classe: `1 = mastite`, `0 = saudável`
+- Melhor modelo: `balanced_random_forest`
 - Features: `engineered` (`33` colunas)
-- Acurácia: `98,56%`
-- Sensibilidade mastite: `97,49%`
-- Especificidade saudável: `99,34%`
-- Validação cruzada por animal: `99,50% ± 0,44%`
-- Recall mastite na validação cruzada: `99,39% ± 0,94%`
+- Acurácia: `98,94%`
+- Sensibilidade mastite: `98,21%`
+- Especificidade saudável: `99,48%`
+- Validação cruzada por animal: `99,56% ± 0,40%`
+- Recall mastite na validação cruzada: `99,57% ± 0,71%`
 
-No holdout, a matriz de confusão foi:
+No holdout, a matriz de confusão foi registrada na ordem `[Mastite, Saudável]`:
 
 ```text
-[[544, 14],
- [  5, 757]]
+[[548, 10],
+ [  4, 758]]
 ```
 
-Com limiar conservador de revisão em `0.25`, os falsos negativos de mastite caem de `14` para `3`, com `22` falsos alertas em saudáveis.
+Com limiar conservador de revisão em `0.25`, os falsos negativos de mastite caem de `10` para `2`, com `19` falsos alertas em saudáveis.
 
 ## Limitações
 

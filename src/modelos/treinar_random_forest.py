@@ -34,6 +34,10 @@ CAMINHO_RELATORIO = RAIZ_PROJETO / "modelos" / "random_forest_mastite_relatorio.
 COLUNA_ROTULO = "classe"
 COLUNA_GRUPO = "Cow_ID"
 RANDOM_STATE = 1000
+CLASSE_SAUDAVEL = 0
+CLASSE_MASTITE = 1
+ORDEM_MATRIZ_CONFUSAO = [CLASSE_MASTITE, CLASSE_SAUDAVEL]
+NOMES_CLASSES_RELATORIO = ["Mastite", "Saudavel"]
 
 FEATURES_FULL = [
     "Months_after_giving_birth",
@@ -200,9 +204,13 @@ def obter_scorers() -> dict:
     return {
         "accuracy": "accuracy",
         "balanced_accuracy": "balanced_accuracy",
-        "precision_mastite": make_scorer(precision_score, pos_label=0, zero_division=0),
-        "recall_mastite": make_scorer(recall_score, pos_label=0),
-        "specificity_saudavel": make_scorer(recall_score, pos_label=1),
+        "precision_mastite": make_scorer(
+            precision_score,
+            pos_label=CLASSE_MASTITE,
+            zero_division=0,
+        ),
+        "recall_mastite": make_scorer(recall_score, pos_label=CLASSE_MASTITE),
+        "specificity_saudavel": make_scorer(recall_score, pos_label=CLASSE_SAUDAVEL),
     }
 
 
@@ -315,7 +323,7 @@ def buscar_melhor_modelo(
 
 def calcular_metricas_holdout(y_teste, y_pred) -> dict:
     acuracia = accuracy_score(y_teste, y_pred)
-    cm = confusion_matrix(y_teste, y_pred, labels=[0, 1])
+    cm = confusion_matrix(y_teste, y_pred, labels=ORDEM_MATRIZ_CONFUSAO)
 
     tp_mastite = int(cm[0, 0])
     fn_mastite = int(cm[0, 1])
@@ -329,8 +337,16 @@ def calcular_metricas_holdout(y_teste, y_pred) -> dict:
         "accuracy": float(acuracia),
         "sensitivity_mastite": float(sens_mastite),
         "specificity_saudavel": float(espec_saudavel),
+        "class_order": NOMES_CLASSES_RELATORIO,
         "confusion_matrix": cm.tolist(),
-        "classification_report": classification_report(y_teste, y_pred, digits=4, output_dict=True),
+        "classification_report": classification_report(
+            y_teste,
+            y_pred,
+            labels=ORDEM_MATRIZ_CONFUSAO,
+            target_names=NOMES_CLASSES_RELATORIO,
+            digits=4,
+            output_dict=True,
+        ),
     }
 
 
@@ -342,10 +358,18 @@ def avaliar_holdout(modelo, X_teste, y_teste) -> dict:
     print(f"Acurácia: {metricas['accuracy']:.4f}")
     print(f"Sensibilidade mastite: {metricas['sensitivity_mastite']:.4f}")
     print(f"Especificidade saudáveis: {metricas['specificity_saudavel']:.4f}")
-    print("Matriz de confusão (linhas = verdadeiro, colunas = previsto):")
+    print("Matriz de confusão (linhas/colunas = Mastite, Saudavel):")
     print(metricas["confusion_matrix"])
     print("\nRelatório de classificação (sklearn):")
-    print(classification_report(y_teste, y_pred, digits=4))
+    print(
+        classification_report(
+            y_teste,
+            y_pred,
+            labels=ORDEM_MATRIZ_CONFUSAO,
+            target_names=NOMES_CLASSES_RELATORIO,
+            digits=4,
+        )
+    )
 
     return metricas
 
@@ -353,11 +377,11 @@ def avaliar_holdout(modelo, X_teste, y_teste) -> dict:
 def avaliar_limiares(modelo, X_teste, y_teste) -> list[dict]:
     probabilidades = modelo.predict_proba(X_teste)
     classes = list(modelo.classes_)
-    if 0 not in classes:
+    if CLASSE_MASTITE not in classes:
         return []
 
-    prob_mastite = probabilidades[:, classes.index(0)]
-    y_real_mastite = y_teste.to_numpy() == 0
+    prob_mastite = probabilidades[:, classes.index(CLASSE_MASTITE)]
+    y_real_mastite = y_teste.to_numpy() == CLASSE_MASTITE
     resultados = []
 
     for limiar in LIMIARES_TRIAGEM:
@@ -653,6 +677,11 @@ def main():
         "feature_set": args.feature_set,
         "search_mode": args.search_mode,
         "refit_metric": args.refit_metric,
+        "label_convention": {
+            "mastite": CLASSE_MASTITE,
+            "saudavel": CLASSE_SAUDAVEL,
+            "positive_class": CLASSE_MASTITE,
+        },
         "jobs": args.jobs,
         "features": list(X.columns),
         "feature_count": int(X.shape[1]),

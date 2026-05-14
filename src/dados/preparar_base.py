@@ -72,20 +72,22 @@ def limpar_e_padronizar(df: pd.DataFrame) -> pd.DataFrame:
         df = df.rename(columns={NOME_ROTULO_BRUTO: "classe"})
 
     # Na base MasPA/Mendeley, class1=1 significa mastite e class1=0 significa
-    # saudavel. O app usa a convencao oposta: 0=mastite e 1=saudavel.
-    df["classe"] = 1 - pd.to_numeric(df["classe"], errors="raise")
-    df["classe"] = df["classe"].astype(int)
+    # saudavel. Mantemos essa convencao para deixar a doenca como classe positiva.
+    df["classe"] = pd.to_numeric(df["classe"], errors="raise").astype(int)
 
     # Validacao automatica: mastite deve ter temperatura media MAIOR
-    temp_cls0 = df[df["classe"] == 0]["Temperature"].mean()
-    temp_cls1 = df[df["classe"] == 1]["Temperature"].mean()
-    print(f"Temp media classe 0: {temp_cls0:.2f} | Temp media classe 1: {temp_cls1:.2f}")
-    if temp_cls0 < temp_cls1:
-        print("AVISO: classe 0 tem temperatura MENOR que classe 1.")
-        print("       Se classe 0 = mastite, isso e clinicamente INVERTIDO.")
+    temp_saudavel = df[df["classe"] == 0]["Temperature"].mean()
+    temp_mastite = df[df["classe"] == 1]["Temperature"].mean()
+    print(
+        f"Temp media mastite (classe 1): {temp_mastite:.2f} | "
+        f"Temp media saudavel (classe 0): {temp_saudavel:.2f}"
+    )
+    if temp_mastite < temp_saudavel:
+        print("AVISO: classe 1 tem temperatura MENOR que classe 0.")
+        print("       Se classe 1 = mastite, isso e clinicamente inesperado.")
         print("       Verifique se a convencao class1=1 mastite continua valida.")
     else:
-        print("OK: classe 0 tem temperatura maior (padrao clinico correto para mastite).")
+        print("OK: classe 1 tem temperatura maior (padrao clinico esperado para mastite).")
     print("Distribuição de classes (após limpeza):")
     print(df["classe"].value_counts())
 
