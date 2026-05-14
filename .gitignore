@@ -11,3 +11,4 @@ __pycache__/
 !dados/.gitkeep
 !dados/bruto/.gitkeep
 !dados/processado/.gitkeep
+/modelos/analises/*.csv

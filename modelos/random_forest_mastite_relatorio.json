@@ -159,7 +159,98 @@
       }
     }
   },
+  "probability_metrics": {
+    "roc_auc": 0.9995213971909426,
+    "average_precision": 0.9993403843713093,
+    "brier_score": 0.009863409090909091,
+    "mean_probability_mastite_real_mastite": 0.9629390681003583,
+    "mean_probability_mastite_real_saudavel": 0.033330708661417324
+  },
   "threshold_analysis": [
+    {
+      "threshold": 0.95,
+      "tp_mastite": 463,
+      "fn_mastite": 95,
+      "fp_mastite": 0,
+      "tn_saudavel": 762,
+      "recall_mastite": 0.8297491039426523,
+      "specificity_saudavel": 1.0,
+      "precision_mastite": 1.0,
+      "f1_mastite": 0.9069539666993144,
+      "revisar": 463
+    },
+    {
+      "threshold": 0.9,
+      "tp_mastite": 491,
+      "fn_mastite": 67,
+      "fp_mastite": 0,
+      "tn_saudavel": 762,
+      "recall_mastite": 0.8799283154121864,
+      "specificity_saudavel": 1.0,
+      "precision_mastite": 1.0,
+      "f1_mastite": 0.9361296472831268,
+      "revisar": 491
+    },
+    {
+      "threshold": 0.85,
+      "tp_mastite": 517,
+      "fn_mastite": 41,
+      "fp_mastite": 1,
+      "tn_saudavel": 761,
+      "recall_mastite": 0.9265232974910395,
+      "specificity_saudavel": 0.9986876640419947,
+      "precision_mastite": 0.9980694980694981,
+      "f1_mastite": 0.9609665427509294,
+      "revisar": 518
+    },
+    {
+      "threshold": 0.8,
+      "tp_mastite": 536,
+      "fn_mastite": 22,
+      "fp_mastite": 1,
+      "tn_saudavel": 761,
+      "recall_mastite": 0.9605734767025089,
+      "specificity_saudavel": 0.9986876640419947,
+      "precision_mastite": 0.9981378026070763,
+      "f1_mastite": 0.9789954337899542,
+      "revisar": 537
+    },
+    {
+      "threshold": 0.75,
+      "tp_mastite": 542,
+      "fn_mastite": 16,
+      "fp_mastite": 1,
+      "tn_saudavel": 761,
+      "recall_mastite": 0.9713261648745519,
+      "specificity_saudavel": 0.9986876640419947,
+      "precision_mastite": 0.998158379373849,
+      "f1_mastite": 0.9845594913714804,
+      "revisar": 543
+    },
+    {
+      "threshold": 0.7,
+      "tp_mastite": 542,
+      "fn_mastite": 16,
+      "fp_mastite": 1,
+      "tn_saudavel": 761,
+      "recall_mastite": 0.9713261648745519,
+      "specificity_saudavel": 0.9986876640419947,
+      "precision_mastite": 0.998158379373849,
+      "f1_mastite": 0.9845594913714804,
+      "revisar": 543
+    },
+    {
+      "threshold": 0.65,
+      "tp_mastite": 544,
+      "fn_mastite": 14,
+      "fp_mastite": 4,
+      "tn_saudavel": 758,
+      "recall_mastite": 0.974910394265233,
+      "specificity_saudavel": 0.994750656167979,
+      "precision_mastite": 0.9927007299270073,
+      "f1_mastite": 0.9837251356238699,
+      "revisar": 548
+    },
     {
       "threshold": 0.6,
       "tp_mastite": 544,
@@ -169,6 +260,19 @@
       "recall_mastite": 0.974910394265233,
       "specificity_saudavel": 0.994750656167979,
       "precision_mastite": 0.9927007299270073,
+      "f1_mastite": 0.9837251356238699,
+      "revisar": 548
+    },
+    {
+      "threshold": 0.55,
+      "tp_mastite": 544,
+      "fn_mastite": 14,
+      "fp_mastite": 4,
+      "tn_saudavel": 758,
+      "recall_mastite": 0.974910394265233,
+      "specificity_saudavel": 0.994750656167979,
+      "precision_mastite": 0.9927007299270073,
+      "f1_mastite": 0.9837251356238699,
       "revisar": 548
     },
     {
@@ -180,7 +284,20 @@
       "recall_mastite": 0.982078853046595,
       "specificity_saudavel": 0.994750656167979,
       "precision_mastite": 0.9927536231884058,
+      "f1_mastite": 0.9873873873873874,
       "revisar": 552
+    },
+    {
+      "threshold": 0.45,
+      "tp_mastite": 551,
+      "fn_mastite": 7,
+      "fp_mastite": 6,
+      "tn_saudavel": 756,
+      "recall_mastite": 0.9874551971326165,
+      "specificity_saudavel": 0.9921259842519685,
+      "precision_mastite": 0.9892280071813285,
+      "f1_mastite": 0.9883408071748879,
+      "revisar": 557
     },
     {
       "threshold": 0.4,
@@ -191,7 +308,20 @@
       "recall_mastite": 0.9874551971326165,
       "specificity_saudavel": 0.9855643044619422,
       "precision_mastite": 0.9804270462633452,
+      "f1_mastite": 0.9839285714285715,
       "revisar": 562
+    },
+    {
+      "threshold": 0.35,
+      "tp_mastite": 551,
+      "fn_mastite": 7,
+      "fp_mastite": 14,
+      "tn_saudavel": 748,
+      "recall_mastite": 0.9874551971326165,
+      "specificity_saudavel": 0.9816272965879265,
+      "precision_mastite": 0.9752212389380531,
+      "f1_mastite": 0.9813000890471951,
+      "revisar": 565
     },
     {
       "threshold": 0.3,
@@ -202,6 +332,7 @@
       "recall_mastite": 0.9946236559139785,
       "specificity_saudavel": 0.9776902887139107,
       "precision_mastite": 0.9702797202797203,
+      "f1_mastite": 0.9823008849557522,
       "revisar": 572
     },
     {
@@ -213,6 +344,7 @@
       "recall_mastite": 0.996415770609319,
       "specificity_saudavel": 0.9750656167979003,
       "precision_mastite": 0.9669565217391304,
+      "f1_mastite": 0.9814651368049425,
       "revisar": 575
     },
     {
@@ -224,6 +356,7 @@
       "recall_mastite": 1.0,
       "specificity_saudavel": 0.963254593175853,
       "precision_mastite": 0.9522184300341296,
+      "f1_mastite": 0.9755244755244755,
       "revisar": 586
     },
     {
@@ -235,6 +368,7 @@
       "recall_mastite": 1.0,
       "specificity_saudavel": 0.9461942257217848,
       "precision_mastite": 0.9315525876460768,
+      "f1_mastite": 0.9645635263612792,
       "revisar": 599
     },
     {
@@ -246,9 +380,112 @@
       "recall_mastite": 1.0,
       "specificity_saudavel": 0.9173228346456693,
       "precision_mastite": 0.8985507246376812,
+      "f1_mastite": 0.9465648854961832,
       "revisar": 621
+    },
+    {
+      "threshold": 0.05,
+      "tp_mastite": 558,
+      "fn_mastite": 0,
+      "fp_mastite": 126,
+      "tn_saudavel": 636,
+      "recall_mastite": 1.0,
+      "specificity_saudavel": 0.8346456692913385,
+      "precision_mastite": 0.8157894736842105,
+      "f1_mastite": 0.898550724637681,
+      "revisar": 684
     }
   ],
+  "recommended_threshold": {
+    "threshold": 0.2,
+    "tp_mastite": 558,
+    "fn_mastite": 0,
+    "fp_mastite": 28,
+    "tn_saudavel": 734,
+    "recall_mastite": 1.0,
+    "specificity_saudavel": 0.963254593175853,
+    "precision_mastite": 0.9522184300341296,
+    "f1_mastite": 0.9755244755244755,
+    "revisar": 586,
+    "criteria": {
+      "min_recall_mastite": 0.99,
+      "min_specificity_saudavel": 0.95,
+      "selection_rule": "minimiza falsos negativos e, em empate, falsos positivos"
+    }
+  },
+  "holdout_error_analysis": {
+    "prediction_file": "modelos/analises/holdout_predicoes.csv",
+    "error_file": "modelos/analises/holdout_erros.csv",
+    "default_threshold_0_50": {
+      "counts": {
+        "verdadeiro_negativo_saudavel": 758,
+        "verdadeiro_positivo_mastite": 548,
+        "falso_negativo_mastite": 10,
+        "falso_positivo_mastite": 4
+      },
+      "summary_by_result": {
+        "falso_negativo_mastite": {
+          "count": 10,
+          "probability_mean": 0.34500000000000003,
+          "probability_min": 0.224,
+          "probability_max": 0.486,
+          "temperature_mean": 43.2
+        },
+        "falso_positivo_mastite": {
+          "count": 4,
+          "probability_mean": 0.72,
+          "probability_min": 0.656,
+          "probability_max": 0.876,
+          "temperature_mean": 43.0
+        },
+        "verdadeiro_negativo_saudavel": {
+          "count": 758,
+          "probability_mean": 0.02970712401055409,
+          "probability_min": 0.0,
+          "probability_max": 0.482,
+          "temperature_mean": 42.73746701846966
+        },
+        "verdadeiro_positivo_mastite": {
+          "count": 548,
+          "probability_mean": 0.9742153284671533,
+          "probability_min": 0.502,
+          "probability_max": 1.0,
+          "temperature_mean": 45.58759124087591
+        }
+      }
+    },
+    "recommended_threshold": {
+      "threshold": 0.2,
+      "counts": {
+        "verdadeiro_negativo_saudavel": 734,
+        "verdadeiro_positivo_mastite": 558,
+        "falso_positivo_mastite": 28
+      },
+      "summary_by_result": {
+        "falso_positivo_mastite": {
+          "count": 28,
+          "probability_mean": 0.37978571428571434,
+          "probability_min": 0.208,
+          "probability_max": 0.876,
+          "temperature_mean": 42.857142857142854
+        },
+        "verdadeiro_negativo_saudavel": {
+          "count": 734,
+          "probability_mean": 0.02011444141689373,
+          "probability_min": 0.0,
+          "probability_max": 0.19,
+          "temperature_mean": 42.73433242506812
+        },
+        "verdadeiro_positivo_mastite": {
+          "count": 558,
+          "probability_mean": 0.9629390681003583,
+          "probability_min": 0.224,
+          "probability_max": 1.0,
+          "temperature_mean": 45.54480286738351
+        }
+      }
+    }
+  },
   "cross_validation_metrics": {
     "accuracy": {
       "mean": 0.9956060606060607,

@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 
 import joblib
+import numpy as np
 import pandas as pd
 from imblearn.ensemble import BalancedRandomForestClassifier
 from imblearn.over_sampling import RandomOverSampler
@@ -11,11 +12,14 @@ from sklearn.base import clone
 from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier
 from sklearn.metrics import (
     accuracy_score,
+    average_precision_score,
+    brier_score_loss,
     classification_report,
     confusion_matrix,
     make_scorer,
     precision_score,
     recall_score,
+    roc_auc_score,
 )
 from sklearn.model_selection import (
     GridSearchCV,
@@ -30,6 +34,9 @@ RAIZ_PROJETO = Path(__file__).resolve().parents[2]
 CAMINHO_BASE_TRATADA = RAIZ_PROJETO / "dados" / "processado" / "mastite_iot_tratado.csv"
 CAMINHO_MODELO = RAIZ_PROJETO / "modelos" / "random_forest_mastite.pkl.gz"
 CAMINHO_RELATORIO = RAIZ_PROJETO / "modelos" / "random_forest_mastite_relatorio.json"
+CAMINHO_ANALISES = RAIZ_PROJETO / "modelos" / "analises"
+CAMINHO_PREDICOES_HOLDOUT = CAMINHO_ANALISES / "holdout_predicoes.csv"
+CAMINHO_ERROS_HOLDOUT = CAMINHO_ANALISES / "holdout_erros.csv"
 
 COLUNA_ROTULO = "classe"
 COLUNA_GRUPO = "Cow_ID"
@@ -73,7 +80,7 @@ REFIT_METRICS = (
     "specificity_saudavel",
 )
 MODELOS = ("random_forest", "extra_trees", "balanced_random_forest")
-LIMIARES_TRIAGEM = (0.60, 0.50, 0.40, 0.30, 0.25, 0.20, 0.15, 0.10)
+LIMIARES_TRIAGEM = tuple(round(valor / 100, 2) for valor in range(95, 4, -5))
 
 
 def carregar_dados(caminho: Path, feature_set: str):
@@ -374,13 +381,28 @@ def avaliar_holdout(modelo, X_teste, y_teste) -> dict:
     return metricas
 
 
-def avaliar_limiares(modelo, X_teste, y_teste) -> list[dict]:
+def obter_probabilidade_mastite(modelo, X_teste) -> np.ndarray:
     probabilidades = modelo.predict_proba(X_teste)
     classes = list(modelo.classes_)
     if CLASSE_MASTITE not in classes:
-        return []
+        raise ValueError("O modelo treinado não contém a classe de mastite.")
 
-    prob_mastite = probabilidades[:, classes.index(CLASSE_MASTITE)]
+    return probabilidades[:, classes.index(CLASSE_MASTITE)]
+
+
+def calcular_metricas_probabilidade(y_teste, prob_mastite: np.ndarray) -> dict:
+    y_real_mastite = y_teste.to_numpy() == CLASSE_MASTITE
+
+    return {
+        "roc_auc": float(roc_auc_score(y_real_mastite, prob_mastite)),
+        "average_precision": float(average_precision_score(y_real_mastite, prob_mastite)),
+        "brier_score": float(brier_score_loss(y_real_mastite, prob_mastite)),
+        "mean_probability_mastite_real_mastite": float(prob_mastite[y_real_mastite].mean()),
+        "mean_probability_mastite_real_saudavel": float(prob_mastite[~y_real_mastite].mean()),
+    }
+
+
+def avaliar_limiares(prob_mastite: np.ndarray, y_teste) -> list[dict]:
     y_real_mastite = y_teste.to_numpy() == CLASSE_MASTITE
     resultados = []
 
@@ -393,6 +415,7 @@ def avaliar_limiares(modelo, X_teste, y_teste) -> list[dict]:
         recall = tp / (tp + fn) if tp + fn else 0.0
         specificity = tn / (tn + fp) if tn + fp else 0.0
         precision = tp / (tp + fp) if tp + fp else 0.0
+        f1 = (2 * precision * recall / (precision + recall)) if precision + recall else 0.0
         resultados.append(
             {
                 "threshold": limiar,
@@ -403,6 +426,7 @@ def avaliar_limiares(modelo, X_teste, y_teste) -> list[dict]:
                 "recall_mastite": float(recall),
                 "specificity_saudavel": float(specificity),
                 "precision_mastite": float(precision),
+                "f1_mastite": float(f1),
                 "revisar": int(tp + fp),
             }
         )
@@ -418,6 +442,130 @@ def avaliar_limiares(modelo, X_teste, y_teste) -> list[dict]:
         )
 
     return resultados
+
+
+def selecionar_limiar_recomendado(
+    resultados: list[dict],
+    min_recall: float = 0.99,
+    min_specificity: float = 0.95,
+) -> dict:
+    candidatos = [
+        item
+        for item in resultados
+        if item["recall_mastite"] >= min_recall
+        and item["specificity_saudavel"] >= min_specificity
+    ]
+    if not candidatos:
+        candidatos = resultados
+
+    recomendado = min(
+        candidatos,
+        key=lambda item: (
+            item["fn_mastite"],
+            item["fp_mastite"],
+            -item["recall_mastite"],
+            -item["specificity_saudavel"],
+        ),
+    )
+
+    return {
+        **recomendado,
+        "criteria": {
+            "min_recall_mastite": min_recall,
+            "min_specificity_saudavel": min_specificity,
+            "selection_rule": "minimiza falsos negativos e, em empate, falsos positivos",
+        },
+    }
+
+
+def nome_classe(valor: int) -> str:
+    return "Mastite" if valor == CLASSE_MASTITE else "Saudavel"
+
+
+def tipo_resultado(y_real: int, y_pred: int) -> str:
+    if y_real == CLASSE_MASTITE and y_pred == CLASSE_MASTITE:
+        return "verdadeiro_positivo_mastite"
+    if y_real == CLASSE_MASTITE and y_pred == CLASSE_SAUDAVEL:
+        return "falso_negativo_mastite"
+    if y_real == CLASSE_SAUDAVEL and y_pred == CLASSE_MASTITE:
+        return "falso_positivo_mastite"
+    return "verdadeiro_negativo_saudavel"
+
+
+def resumir_por_tipo(predicoes: pd.DataFrame, coluna_tipo: str) -> dict:
+    resumo = {}
+    for tipo, grupo in predicoes.groupby(coluna_tipo):
+        resumo[tipo] = {
+            "count": int(len(grupo)),
+            "probability_mean": float(grupo["probabilidade_mastite"].mean()),
+            "probability_min": float(grupo["probabilidade_mastite"].min()),
+            "probability_max": float(grupo["probabilidade_mastite"].max()),
+            "temperature_mean": (
+                float(grupo["Temperature"].mean()) if "Temperature" in grupo.columns else None
+            ),
+        }
+    return resumo
+
+
+def analisar_erros_holdout(
+    X_teste: pd.DataFrame,
+    y_teste,
+    y_pred_default: np.ndarray,
+    prob_mastite: np.ndarray,
+    grupos_teste,
+    limiar_recomendado: dict,
+) -> dict:
+    predicoes = X_teste.copy()
+    predicoes.insert(0, "indice_original", X_teste.index)
+    if grupos_teste is not None:
+        predicoes.insert(1, COLUNA_GRUPO, grupos_teste.to_numpy())
+
+    y_real = y_teste.to_numpy()
+    pred_limiar = np.where(
+        prob_mastite >= limiar_recomendado["threshold"],
+        CLASSE_MASTITE,
+        CLASSE_SAUDAVEL,
+    )
+
+    predicoes["classe_real"] = y_real
+    predicoes["classe_real_nome"] = [nome_classe(valor) for valor in y_real]
+    predicoes["probabilidade_mastite"] = prob_mastite
+    predicoes["predicao_padrao_050"] = y_pred_default
+    predicoes["predicao_padrao_050_nome"] = [nome_classe(valor) for valor in y_pred_default]
+    predicoes["resultado_padrao_050"] = [
+        tipo_resultado(real, previsto) for real, previsto in zip(y_real, y_pred_default)
+    ]
+    predicoes["predicao_limiar_recomendado"] = pred_limiar
+    predicoes["predicao_limiar_recomendado_nome"] = [
+        nome_classe(valor) for valor in pred_limiar
+    ]
+    predicoes["resultado_limiar_recomendado"] = [
+        tipo_resultado(real, previsto) for real, previsto in zip(y_real, pred_limiar)
+    ]
+
+    CAMINHO_ANALISES.mkdir(parents=True, exist_ok=True)
+    predicoes.to_csv(CAMINHO_PREDICOES_HOLDOUT, index=False)
+    predicoes[
+        predicoes["resultado_padrao_050"].str.startswith("falso")
+        | predicoes["resultado_limiar_recomendado"].str.startswith("falso")
+    ].to_csv(CAMINHO_ERROS_HOLDOUT, index=False)
+
+    return {
+        "prediction_file": str(CAMINHO_PREDICOES_HOLDOUT.relative_to(RAIZ_PROJETO)),
+        "error_file": str(CAMINHO_ERROS_HOLDOUT.relative_to(RAIZ_PROJETO)),
+        "default_threshold_0_50": {
+            "counts": predicoes["resultado_padrao_050"].value_counts().to_dict(),
+            "summary_by_result": resumir_por_tipo(predicoes, "resultado_padrao_050"),
+        },
+        "recommended_threshold": {
+            "threshold": limiar_recomendado["threshold"],
+            "counts": predicoes["resultado_limiar_recomendado"].value_counts().to_dict(),
+            "summary_by_result": resumir_por_tipo(
+                predicoes,
+                "resultado_limiar_recomendado",
+            ),
+        },
+    }
 
 
 def avaliar_validacao_cruzada(modelo, X, y, grupos, n_jobs: int) -> dict:
@@ -666,8 +814,34 @@ def main():
     print(f"Melhor score ({args.refit_metric}) na busca: {melhor_busca.best_score_:.4f}")
     print(melhores_parametros)
 
+    y_pred_holdout = melhor_estimador_holdout.predict(X_teste)
+    prob_mastite_holdout = obter_probabilidade_mastite(melhor_estimador_holdout, X_teste)
     metricas_holdout = avaliar_holdout(melhor_estimador_holdout, X_teste, y_teste)
-    limiares_holdout = avaliar_limiares(melhor_estimador_holdout, X_teste, y_teste)
+    metricas_probabilidade = calcular_metricas_probabilidade(y_teste, prob_mastite_holdout)
+    print("\n=== MÉTRICAS DE PROBABILIDADE NO HOLDOUT ===")
+    print(f"ROC AUC: {metricas_probabilidade['roc_auc']:.4f}")
+    print(f"Average precision: {metricas_probabilidade['average_precision']:.4f}")
+    print(f"Brier score: {metricas_probabilidade['brier_score']:.4f}")
+
+    limiares_holdout = avaliar_limiares(prob_mastite_holdout, y_teste)
+    limiar_recomendado = selecionar_limiar_recomendado(limiares_holdout)
+    print("\n=== LIMIAR RECOMENDADO PARA TRIAGEM ===")
+    print(
+        f"limiar={limiar_recomendado['threshold']:.2f} "
+        f"fn_mastite={limiar_recomendado['fn_mastite']} "
+        f"fp_mastite={limiar_recomendado['fp_mastite']} "
+        f"recall={limiar_recomendado['recall_mastite']:.4f} "
+        f"especificidade={limiar_recomendado['specificity_saudavel']:.4f}"
+    )
+
+    analise_erros = analisar_erros_holdout(
+        X_teste,
+        y_teste,
+        y_pred_holdout,
+        prob_mastite_holdout,
+        grupos_teste,
+        limiar_recomendado,
+    )
     metricas_cv = avaliar_validacao_cruzada(melhor_estimador_holdout, X, y, grupos, n_jobs=args.jobs)
 
     modelo_final = treinar_modelo_final(melhor_estimador_holdout, X, y)
@@ -697,7 +871,10 @@ def main():
         "group_column": COLUNA_GRUPO if grupos is not None else None,
         "evaluation_split": tipo_split,
         "holdout_metrics": metricas_holdout,
+        "probability_metrics": metricas_probabilidade,
         "threshold_analysis": limiares_holdout,
+        "recommended_threshold": limiar_recomendado,
+        "holdout_error_analysis": analise_erros,
         "cross_validation_metrics": metricas_cv,
         "top_feature_importances": obter_importancias(modelo_final, list(X.columns)),
     }

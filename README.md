@@ -88,7 +88,9 @@ python src/modelos/treinar_random_forest.py --allow-row-split
 ## Saídas do modelo
 
 - `modelos/random_forest_mastite.pkl.gz`: modelo treinado comprimido.
-- `modelos/random_forest_mastite_relatorio.json`: métricas, hiperparâmetros, comparação de modelos, análise de limiares e importância das features.
+- `modelos/random_forest_mastite_relatorio.json`: métricas, hiperparâmetros, comparação de modelos, análise de limiares, análise de erros e importância das features.
+- `modelos/analises/holdout_predicoes.csv`: predições do holdout para inspeção local.
+- `modelos/analises/holdout_erros.csv`: falsos positivos e falsos negativos para inspeção local.
 
 Último treino registrado:
 
@@ -99,6 +101,9 @@ python src/modelos/treinar_random_forest.py --allow-row-split
 - Acurácia: `98,94%`
 - Sensibilidade mastite: `98,21%`
 - Especificidade saudável: `99,48%`
+- ROC AUC: `99,95%`
+- Average precision: `99,93%`
+- Brier score: `0,0099`
 - Validação cruzada por animal: `99,56% ± 0,40%`
 - Recall mastite na validação cruzada: `99,57% ± 0,71%`
 
@@ -109,14 +114,14 @@ No holdout, a matriz de confusão foi registrada na ordem `[Mastite, Saudável]`
  [  4, 758]]
 ```
 
-Com limiar conservador de revisão em `0.25`, os falsos negativos de mastite caem de `10` para `2`, com `19` falsos alertas em saudáveis.
+O pipeline agora escolhe automaticamente um limiar de triagem priorizando recall de mastite com especificidade mínima de saudáveis. No último treino, o limiar recomendado foi `0.20`: os falsos negativos de mastite caem de `10` para `0`, com `28` falsos alertas em saudáveis e especificidade de `96,33%`.
 
 ## Limitações
 
 - O modelo é uma ferramenta de apoio à triagem, não diagnóstico definitivo.
 - A avaliação correta deve ser feita por animal (`Cow_ID`), não por linha.
 - Ainda não há explicabilidade por instância (SHAP/LIME).
-- Próxima etapa planejada: calibrar limiares de decisão e adicionar explicabilidade por instância.
+- Próxima etapa planejada: adicionar explicabilidade por instância.
 
 ## Referências
 
